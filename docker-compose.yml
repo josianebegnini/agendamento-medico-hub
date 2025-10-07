@@ -1,0 +1,43 @@
+version: "3.8"
+
+services:
+  rabbitmq:
+    image: rabbitmq:3-management
+    container_name: rabbitmq
+    ports:
+      - "5672:5672"
+      - "15672:15672" # painel web
+    environment:
+      RABBITMQ_DEFAULT_USER: guest
+      RABBITMQ_DEFAULT_PASS: guest
+
+  produtos:
+    build:
+      context: ./produtos
+    container_name: produtos
+    ports:
+      - "8081:8081"
+    environment:
+      - SPRING_RABBITMQ_HOST=rabbitmq
+      - SPRING_RABBITMQ_PORT=5672
+      - SPRING_RABBITMQ_USERNAME=guest
+      - SPRING_RABBITMQ_PASSWORD=guest
+      - BROKER_EXCHANGE_PEDIDO_NAME=pedido.produto
+    depends_on:
+      - rabbitmq
+
+  pedidos:
+    build:
+      context: ./pedidos
+    container_name: pedidos
+    ports:
+      - "8082:8082"
+    environment:
+      - SPRING_RABBITMQ_HOST=rabbitmq
+      - SPRING_RABBITMQ_PORT=5672
+      - SPRING_RABBITMQ_USERNAME=guest
+      - SPRING_RABBITMQ_PASSWORD=guest
+      - BROKER_EXCHANGE_PEDIDO_NAME=pedido.produto
+    depends_on:
+      - rabbitmq
+      - produtos
