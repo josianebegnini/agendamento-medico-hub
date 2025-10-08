@@ -11,9 +11,19 @@ spring:
             - id: ms-medico
               uri: http://localhost:8081
               predicates:
-                - Path=/api/medicos/**,
+                - Path=/api/medicos/**
 
-            - id: ms-especialidades
+            - id: ms-especialidade
               uri: http://localhost:8081
               predicates:
                 - Path=/api/especialidades/**
+
+            - id: ms-paciente
+              uri: http://localhost:8082
+              predicates:
+                - Path=/api/pacientes/**
+
+            - id: ms-convenio
+              uri: http://localhost:8082
+              predicates:
+                - Path=/api/convenios/**
