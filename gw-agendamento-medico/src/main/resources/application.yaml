@@ -1,0 +1,19 @@
+server:
+  port: 8080
+spring:
+  application:
+    name: api-gateway
+  cloud:
+    gateway:
+      server:
+        webflux:
+          routes:
+            - id: ms-medico
+              uri: http://localhost:8081
+              predicates:
+                - Path=/api/medicos/**,
+
+            - id: ms-especialidades
+              uri: http://localhost:8081
+              predicates:
+                - Path=/api/especialidades/**
