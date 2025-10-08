@@ -16,6 +16,8 @@ import java.time.LocalDate;
 @Builder
 public class PacienteRequestDTO {
 
+    private Long id;
+
     @NotBlank(message = "Nome é obrigatório")
     @Size(min = 3, max = 100, message = "Nome deve ter entre 3 e 100 caracteres")
     private String nome;
