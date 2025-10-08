@@ -155,6 +155,11 @@ input[type="datetime-local"] {
     word-break: break-word;
 }
 
+.list li > div:first-child {
+    flex: 1;
+    min-width: 0;
+}
+
 .list li span {
     font-size: 0.95rem;
     max-width: 70%;
@@ -163,8 +168,21 @@ input[type="datetime-local"] {
     text-overflow: ellipsis;
 }
 
+.list-actions {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    flex-shrink: 0;
+}
+
+.list li .status {
+    max-width: none;
+    white-space: nowrap;
+    overflow: visible;
+    text-overflow: initial;
+}
+
 .btn-action {
-    margin-left: 0.5rem;
     padding: 0.4rem 0.7rem;
     font-size: 0.85rem;
     border: none;
@@ -173,10 +191,53 @@ input[type="datetime-local"] {
     background: rgba(255,255,255,0.2);
     color: #fff;
     transition: background 0.3s ease;
+    white-space: nowrap;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
 }
 
 .btn-action:hover {
     background: rgba(255,255,255,0.35);
+}
+
+.btn-action-danger {
+    background: rgba(255, 99, 132, 0.35);
+}
+
+.btn-action-danger:hover {
+    background: rgba(255, 99, 132, 0.5);
+}
+
+.btn-action:disabled,
+.btn-action[disabled] {
+    opacity: 0.6;
+    cursor: not-allowed;
+}
+
+.status {
+    display: inline-block;
+    padding: 0.1rem 0.6rem;
+    border-radius: 999px;
+    font-size: 0.75rem;
+    font-weight: 600;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+}
+
+.status-agendada {
+    background: rgba(79, 175, 254, 0.2);
+    color: #188ff7;
+}
+
+.status-cancelada {
+    background: rgba(255, 99, 132, 0.25);
+    color: #fd4e68;
+}
+
+.status-concluida {
+    background: rgba(58, 213, 176, 0.25);
+    color: #70f0c3;
 }
 
 .pager {
