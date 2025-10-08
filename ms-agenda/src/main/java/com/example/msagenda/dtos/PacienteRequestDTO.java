@@ -1,6 +1,5 @@
-package com.example.mspaciente.dtos;
+package com.example.msagenda.dtos;
 
-import com.example.mspaciente.models.Convenio;
 import com.fasterxml.jackson.annotation.JsonFormat;
 import jakarta.validation.constraints.*;
 import lombok.AllArgsConstructor;
@@ -15,8 +14,6 @@ import java.time.LocalDate;
 @AllArgsConstructor
 @Builder
 public class PacienteRequestDTO {
-
-    private Long id;
 
     @NotBlank(message = "Nome é obrigatório")
     @Size(min = 3, max = 100, message = "Nome deve ter entre 3 e 100 caracteres")

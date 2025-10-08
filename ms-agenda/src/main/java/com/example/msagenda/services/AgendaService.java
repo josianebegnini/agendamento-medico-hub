@@ -1,14 +1,15 @@
 package com.example.msagenda.services;
 
+import com.example.msagenda.client.MedicoClient;
+import com.example.msagenda.client.PacienteClient;
+import com.example.msagenda.dtos.AgendamentoRequestDTO;
+import com.example.msagenda.dtos.MedicoResponseDTO;
+import com.example.msagenda.dtos.PacienteResponseDTO;
 import com.example.msagenda.enums.StatusAgenda;
 import com.example.msagenda.enums.TipoConsulta;
 import com.example.msagenda.exceptions.ResourceNotFoundException;
 import com.example.msagenda.models.Agenda;
-import com.example.msagenda.models.Medico;
-import com.example.msagenda.models.Paciente;
 import com.example.msagenda.repositories.AgendaRepository;
-import com.example.msagenda.repositories.MedicoRepository;
-import com.example.msagenda.repositories.PacienteRepository;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
@@ -17,15 +18,13 @@ import java.util.List;
 @Service
 public class AgendaService {
     private final AgendaRepository agendaRepository;
-    private final PacienteRepository pacienteRepository;
-    private final MedicoRepository medicoRepository;
+    private final MedicoClient medicoClient;
+    private final PacienteClient pacienteClient;
 
-    public AgendaService(AgendaRepository agendaRepository,
-                         PacienteRepository pacienteRepository,
-                         MedicoRepository medicoRepository) {
+    public AgendaService(AgendaRepository agendaRepository, MedicoClient medicoClient, PacienteClient pacienteClient) {
         this.agendaRepository = agendaRepository;
-        this.pacienteRepository = pacienteRepository;
-        this.medicoRepository = medicoRepository;
+        this.medicoClient = medicoClient;
+        this.pacienteClient = pacienteClient;
     }
 
     public List<Agenda> listar() {
@@ -43,29 +42,29 @@ public class AgendaService {
     /**
      * Agenda uma nova consulta com validações.
      */
-    public Agenda agendar(Long pacienteId, Long medicoId, LocalDateTime dataHora,
-                          TipoConsulta tipoConsulta) {
+    public Agenda agendar(AgendamentoRequestDTO agendamentoDTO) {
 
-        Paciente paciente = pacienteRepository.findById(pacienteId)
-                .orElseThrow(() -> new ResourceNotFoundException("Paciente não encontrado."));
+        // verifica se o médico e o paciente existem
+        MedicoResponseDTO medico = medicoClient.buscarPorId(agendamentoDTO.getMedicoId());
+        PacienteResponseDTO paciente = pacienteClient.getPacienteById(agendamentoDTO.getPacienteId());
 
-        if (paciente.getConvenio() == null) {
-            throw new IllegalArgumentException("Paciente não possui convênio vinculado.");
+        if(medico == null){
+            throw new ResourceNotFoundException("Médico não encontrado.");
+        }
+        if(paciente == null){
+            throw new ResourceNotFoundException("Paciente não encontrado.");
         }
 
-        Medico medico = medicoRepository.findById(medicoId)
-                .orElseThrow(() -> new ResourceNotFoundException("Médico não encontrado."));
-
-        boolean ocupado = agendaRepository.existsByMedicoAndDataHora(medico, dataHora);
+        boolean ocupado = agendaRepository.existsByMedicoAndDataHora(medico.getId(), agendamentoDTO.getDataHora());
         if (ocupado) {
             throw new IllegalArgumentException("O médico já possui um agendamento neste horário.");
         }
 
         Agenda novaAgenda = Agenda.builder()
-                .paciente(paciente)
-                .medico(medico)
-                .dataHora(dataHora)
-                .tipoConsulta(tipoConsulta)
+                .pacienteId(paciente.getId())
+                .medicoId(medico.getId())
+                .dataHora(agendamentoDTO.getDataHora())
+                .tipoConsulta(agendamentoDTO.getTipoConsulta())
                 .status(StatusAgenda.AGENDADA)
                 .build();
 
@@ -78,7 +77,7 @@ public class AgendaService {
     public Agenda remarcar(Long idAgenda, LocalDateTime novaDataHora, TipoConsulta novoTipo) {
         Agenda agenda = buscarPorId(idAgenda);
 
-        boolean ocupado = agendaRepository.existsByMedicoAndDataHora(agenda.getMedico(), novaDataHora);
+        boolean ocupado = agendaRepository.existsByMedicoAndDataHora(agenda.getMedicoId(), novaDataHora);
         if (ocupado) {
             throw new IllegalArgumentException("O médico já possui um agendamento neste horário.");
         }

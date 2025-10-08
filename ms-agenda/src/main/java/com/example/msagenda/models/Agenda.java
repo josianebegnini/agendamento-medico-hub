@@ -27,11 +27,6 @@ public class Agenda {
     @Enumerated(EnumType.STRING)
     private StatusAgenda status;
 
-    @ManyToOne
-    @JoinColumn(name = "paciente_id", nullable = false)
-    private Paciente paciente;
-
-    @ManyToOne
-    @JoinColumn(name = "medico_id", nullable = false)
-    private Medico medico;
+    private Long medicoId;
+    private Long pacienteId;
 }

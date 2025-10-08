@@ -59,12 +59,7 @@ public class AgendaController {
     // Reaproveitamos o serviço para orquestrar a criação do agendamento porque ele valida a
     // disponibilidade de recursos e garante integridade, convertendo o resultado para DTO no retorno.
     public ResponseEntity<AgendamentoResponseDTO> agendar(@Valid @RequestBody AgendamentoRequestDTO dto) {
-        var agendamento = service.agendar(
-                dto.getPacienteId(),
-                dto.getMedicoId(),
-                dto.getDataHora(),
-                dto.getTipoConsulta()
-        );
+        var agendamento = service.agendar(dto);
         return ResponseEntity.ok(mapper.toResponse(agendamento));
     }
 
