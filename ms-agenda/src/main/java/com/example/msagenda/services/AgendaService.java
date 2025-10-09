@@ -1,7 +1,5 @@
 package com.example.msagenda.services;
 
-import com.example.msagenda.client.MedicoClient;
-import com.example.msagenda.client.PacienteClient;
 import com.example.msagenda.dtos.AgendamentoRequestDTO;
 import com.example.msagenda.dtos.AgendamentoResponseDTO;
 import com.example.msagenda.dtos.MedicoResponseDTO;
@@ -13,6 +11,7 @@ import com.example.msagenda.mappers.AgendamentoMapper;
 import com.example.msagenda.models.Agenda;
 import com.example.msagenda.repositories.AgendaRepository;
 import org.springframework.stereotype.Service;
+import org.springframework.web.reactive.function.client.WebClient;
 
 import java.time.LocalDateTime;
 import java.util.List;
@@ -20,18 +19,18 @@ import java.util.List;
 public class AgendaService {
 
     private final AgendaRepository agendaRepository;
-    private final MedicoClient medicoClient;
-    private final PacienteClient pacienteClient;
     private final AgendamentoMapper agendamentoMapper;
+    private final WebClient pacienteWebClient;
+    private final WebClient medicoWebClient;
 
     public AgendaService(AgendaRepository agendaRepository,
-                         MedicoClient medicoClient,
-                         PacienteClient pacienteClient,
-                         AgendamentoMapper agendamentoMapper) {
+                         AgendamentoMapper agendamentoMapper,
+                         WebClient pacienteWebClient,
+                         WebClient medicoWebClient) {
         this.agendaRepository = agendaRepository;
-        this.medicoClient = medicoClient;
-        this.pacienteClient = pacienteClient;
         this.agendamentoMapper = agendamentoMapper;
+        this.pacienteWebClient = pacienteWebClient;
+        this.medicoWebClient = medicoWebClient;
     }
 
     public List<AgendamentoResponseDTO> listarComNomes() {
@@ -72,8 +71,16 @@ public class AgendaService {
     }
 
     public Agenda agendar(AgendamentoRequestDTO dto) {
-        MedicoResponseDTO medico = medicoClient.buscarPorId(dto.getMedicoId());
-        PacienteResponseDTO paciente = pacienteClient.getPacienteById(dto.getPacienteId());
+
+        MedicoResponseDTO medico = medicoWebClient.get()
+                .uri("/api/medicos/{id}", dto.getMedicoId())
+                .retrieve()
+                .bodyToMono(MedicoResponseDTO.class).block();
+
+        PacienteResponseDTO paciente = pacienteWebClient.get()
+                .uri("/api/pacientes/{id}", dto.getPacienteId())
+                .retrieve()
+                .bodyToMono(PacienteResponseDTO.class).block();
 
         if (medico == null) throw new ResourceNotFoundException("Médico não encontrado.");
         if (paciente == null) throw new ResourceNotFoundException("Paciente não encontrado.");
@@ -118,8 +125,16 @@ public class AgendaService {
        Métodos auxiliares internos
        ============================= */
     private AgendamentoResponseDTO toResponseComNomes(Agenda agenda) {
-        MedicoResponseDTO medico = medicoClient.buscarPorId(agenda.getMedicoId());
-        PacienteResponseDTO paciente = pacienteClient.getPacienteById(agenda.getPacienteId());
+
+        MedicoResponseDTO medico = medicoWebClient.get()
+                .uri("/api/medicos/{id}", agenda.getMedicoId())
+                .retrieve()
+                .bodyToMono(MedicoResponseDTO.class).block();
+
+        PacienteResponseDTO paciente = pacienteWebClient.get()
+                .uri("/api/pacientes/{id}", agenda.getPacienteId())
+                .retrieve()
+                .bodyToMono(PacienteResponseDTO.class).block();
 
         return agendamentoMapper.toResponse(
                 agenda,

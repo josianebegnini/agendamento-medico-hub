@@ -9,27 +9,27 @@ spring:
         webflux:
           routes:
             - id: ms-medico
-              uri: http://localhost:8081
+              uri: http://ms-medico:8081
               predicates:
                 - Path=/api/medicos/**
 
             - id: ms-especialidade
-              uri: http://localhost:8081
+              uri: http://ms-medico:8081
               predicates:
                 - Path=/api/especialidades/**
 
             - id: ms-paciente
-              uri: http://localhost:8082
+              uri: http://ms-paciente:8082
               predicates:
                 - Path=/api/pacientes/**
 
             - id: ms-convenio
-              uri: http://localhost:8082
+              uri: http://ms-paciente:8082
               predicates:
                 - Path=/api/convenios/**
 
             - id: ms-auth
-              uri: http://localhost:8084
+              uri: http://ms-auth:8084
               predicates:
                 - Path=/api/auth/**
 jwt:
