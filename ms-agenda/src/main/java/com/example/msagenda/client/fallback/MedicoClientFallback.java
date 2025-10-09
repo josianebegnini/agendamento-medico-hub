@@ -2,9 +2,9 @@ package com.example.msagenda.client.fallback;
 
 import com.example.msagenda.client.MedicoClient;
 import com.example.msagenda.dtos.MedicoResponseDTO;
+import com.example.msagenda.exceptions.ServiceUnavailableException;
 import org.springframework.stereotype.Component;
 
-import javax.naming.ServiceUnavailableException;
 
 @Component
 public class MedicoClientFallback implements MedicoClient {

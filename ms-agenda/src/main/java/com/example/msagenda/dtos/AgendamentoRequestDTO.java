@@ -28,4 +28,36 @@ public class AgendamentoRequestDTO {
 
     @NotNull(message = "tipoConsulta é obrigatório")
     private TipoConsulta tipoConsulta;
+
+    public Long getPacienteId() {
+        return pacienteId;
+    }
+
+    public void setPacienteId(Long pacienteId) {
+        this.pacienteId = pacienteId;
+    }
+
+    public Long getMedicoId() {
+        return medicoId;
+    }
+
+    public void setMedicoId(Long medicoId) {
+        this.medicoId = medicoId;
+    }
+
+    public LocalDateTime getDataHora() {
+        return dataHora;
+    }
+
+    public void setDataHora(LocalDateTime dataHora) {
+        this.dataHora = dataHora;
+    }
+
+    public TipoConsulta getTipoConsulta() {
+        return tipoConsulta;
+    }
+
+    public void setTipoConsulta(TipoConsulta tipoConsulta) {
+        this.tipoConsulta = tipoConsulta;
+    }
 }
