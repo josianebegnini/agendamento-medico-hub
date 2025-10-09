@@ -7,15 +7,11 @@ import org.springframework.stereotype.Component;
 @Component
 public class AgendamentoMapper {
 
-    public AgendamentoResponseDTO toResponse(Agenda agenda) {
+    public AgendamentoResponseDTO toResponse(Agenda agenda, String pacienteNome, String medicoNome) {
         return AgendamentoResponseDTO.builder()
                 .id(agenda.getId())
-                .pacienteNome(
-                        agenda.getPaciente() != null ? agenda.getPaciente().getNome() : "Paciente"
-                )
-                .medicoNome(
-                        agenda.getMedico() != null ? agenda.getMedico().getNome() : "Médico"
-                )
+                .pacienteNome(pacienteNome != null ? pacienteNome : "Paciente")
+                .medicoNome(medicoNome != null ? medicoNome : "Médico")
                 .dataHora(agenda.getDataHora())
                 .tipoConsulta(agenda.getTipoConsulta())
                 .status(agenda.getStatus())

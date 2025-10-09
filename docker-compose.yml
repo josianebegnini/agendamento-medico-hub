@@ -5,39 +5,38 @@ services:
     image: rabbitmq:3-management
     container_name: rabbitmq
     ports:
-      - "5672:5672"
-      - "15672:15672" # painel web
+      - "5672:5672"       # porta de comunicação do broker
+      - "15672:15672"     # painel web do RabbitMQ
     environment:
       RABBITMQ_DEFAULT_USER: guest
       RABBITMQ_DEFAULT_PASS: guest
 
-  produtos:
+  ms-medico:
     build:
-      context: ./produtos
-    container_name: produtos
+      context: ./ms-medico
+    container_name: ms-medico
     ports:
       - "8081:8081"
-    environment:
-      - SPRING_RABBITMQ_HOST=rabbitmq
-      - SPRING_RABBITMQ_PORT=5672
-      - SPRING_RABBITMQ_USERNAME=guest
-      - SPRING_RABBITMQ_PASSWORD=guest
-      - BROKER_EXCHANGE_PEDIDO_NAME=pedido.produto
-    depends_on:
-      - rabbitmq
 
-  pedidos:
+  ms-paciente:
     build:
-      context: ./pedidos
-    container_name: pedidos
+      context: ./ms-paciente
+    container_name: ms-paciente
     ports:
       - "8082:8082"
+
+  ms-agenda:
+    build:
+      context: ./ms-agenda
+    container_name: ms-agenda
+    ports:
+      - "8083:8083"
     environment:
       - SPRING_RABBITMQ_HOST=rabbitmq
       - SPRING_RABBITMQ_PORT=5672
       - SPRING_RABBITMQ_USERNAME=guest
       - SPRING_RABBITMQ_PASSWORD=guest
-      - BROKER_EXCHANGE_PEDIDO_NAME=pedido.produto
     depends_on:
       - rabbitmq
-      - produtos
+      - ms-medico
+      - ms-paciente

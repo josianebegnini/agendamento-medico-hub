@@ -36,7 +36,7 @@ public class AgendaController {
     // Delegamos a busca e a conversão para o service e para o mapper para manter o controller fino
     // e garantir que as regras de negócio e de apresentação fiquem concentradas em suas camadas.
     public ResponseEntity<List<AgendamentoResponseDTO>> listar() {
-        var list = service.listar().stream().map(mapper::toResponse).toList();
+        List<AgendamentoResponseDTO> list = service.listarComNomes();
         return ResponseEntity.ok(list);
     }
 
@@ -47,8 +47,8 @@ public class AgendaController {
     // Buscamos o agendamento pelo service para reutilizar a validação de existência e depois
     // convertê-lo para DTO, assegurando consistência de saída em toda a aplicação.
     public ResponseEntity<AgendamentoResponseDTO> buscarPorId(@PathVariable Long id) {
-        Agenda a = service.buscarPorId(id);
-        return ResponseEntity.ok(mapper.toResponse(a));
+        AgendamentoResponseDTO dto = service.buscarPorIdComNomes(id);
+        return ResponseEntity.ok(dto);
     }
 
     @PostMapping("/agendar")
@@ -59,8 +59,8 @@ public class AgendaController {
     // Reaproveitamos o serviço para orquestrar a criação do agendamento porque ele valida a
     // disponibilidade de recursos e garante integridade, convertendo o resultado para DTO no retorno.
     public ResponseEntity<AgendamentoResponseDTO> agendar(@Valid @RequestBody AgendamentoRequestDTO dto) {
-        var agendamento = service.agendar(dto);
-        return ResponseEntity.ok(mapper.toResponse(agendamento));
+        AgendamentoResponseDTO response = service.agendarComNomes(dto);
+        return ResponseEntity.ok(response);
     }
 
     @PutMapping("/{id}/remarcar")
