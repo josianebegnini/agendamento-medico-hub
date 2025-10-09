@@ -1,16 +1,21 @@
 package com.ms_auth.infrastructure.security.filter;
 
-import com.msauth.domain.service.TokenService;
-import org.springframework.cloud.gateway.filter.GatewayFilter;
-import org.springframework.cloud.gateway.filter.GatewayFilterChain;
-import org.springframework.http.HttpStatus;
-import org.springframework.http.server.reactive.ServerHttpRequest;
+import com.ms_auth.domain.service.TokenService;
+import jakarta.servlet.FilterChain;
+import jakarta.servlet.ServletException;
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
+import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
+import org.springframework.security.core.authority.SimpleGrantedAuthority;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Component;
-import org.springframework.web.server.ServerWebExchange;
-import reactor.core.publisher.Mono;
+import org.springframework.web.filter.OncePerRequestFilter;
+
+import java.io.IOException;
+import java.util.Collections;
 
 @Component
-public class JwtAuthenticationFilter implements GatewayFilter {
+public class JwtAuthenticationFilter extends OncePerRequestFilter {
 
     private final TokenService tokenService;
     private static final String AUTH_HEADER = "Authorization";
@@ -21,34 +26,44 @@ public class JwtAuthenticationFilter implements GatewayFilter {
     }
 
     @Override
-    public Mono<Void> filter(ServerWebExchange exchange, GatewayFilterChain chain) {
-        ServerHttpRequest request = exchange.getRequest();
+    protected void doFilterInternal(HttpServletRequest request,
+                                    HttpServletResponse response,
+                                    FilterChain filterChain) throws ServletException, IOException {
 
         // Skip authentication for public endpoints
-        if (isPublicEndpoint(request.getPath().toString())) {
-            return chain.filter(exchange);
+        if (isPublicEndpoint(request.getServletPath())) {
+            filterChain.doFilter(request, response);
+            return;
         }
 
         String authHeader = getAuthHeader(request);
 
         if (authHeader == null || !authHeader.startsWith(BEARER_PREFIX)) {
-            return onError(exchange, "Missing or invalid authorization header", HttpStatus.UNAUTHORIZED);
+            sendError(response, HttpServletResponse.SC_UNAUTHORIZED, "Missing or invalid authorization header");
+            return;
         }
 
         String token = authHeader.substring(BEARER_PREFIX.length());
 
         if (!tokenService.validateToken(token)) {
-            return onError(exchange, "Invalid token", HttpStatus.UNAUTHORIZED);
+            sendError(response, HttpServletResponse.SC_UNAUTHORIZED, "Invalid token");
+            return;
         }
 
         String username = tokenService.extractUsername(token);
 
-        // Add user info to headers for downstream services
-        ServerHttpRequest mutatedRequest = request.mutate()
-                .header("X-User-Id", username)
-                .build();
+        // Set authentication in Spring Security Context
+        UsernamePasswordAuthenticationToken authentication =
+                new UsernamePasswordAuthenticationToken(username, null,
+                        Collections.singletonList(new SimpleGrantedAuthority("ROLE_USER")));
 
-        return chain.filter(exchange.mutate().request(mutatedRequest).build());
+        SecurityContextHolder.getContext().setAuthentication(authentication);
+
+        // Add user info to headers for downstream processing
+        // Note: In a microservices architecture, this would be passed to other services
+        // For now, we just set it in the security context
+
+        filterChain.doFilter(request, response);
     }
 
     private boolean isPublicEndpoint(String path) {
@@ -57,12 +72,13 @@ public class JwtAuthenticationFilter implements GatewayFilter {
                 path.startsWith("/h2-console");
     }
 
-    private String getAuthHeader(ServerHttpRequest request) {
-        return request.getHeaders().getFirst(AUTH_HEADER);
+    private String getAuthHeader(HttpServletRequest request) {
+        return request.getHeader(AUTH_HEADER);
     }
 
-    private Mono<Void> onError(ServerWebExchange exchange, String error, HttpStatus status) {
-        exchange.getResponse().setStatusCode(status);
-        return exchange.getResponse().setComplete();
+    private void sendError(HttpServletResponse response, int status, String message) throws IOException {
+        response.setStatus(status);
+        response.setContentType("application/json");
+        response.getWriter().write("{\"error\": \"" + message + "\"}");
     }
 }

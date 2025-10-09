@@ -1,10 +1,10 @@
 package com.ms_auth.infrastructure.persistence.adapter;
 
-import com.msauth.domain.entity.User;
-import com.msauth.domain.repository.UserRepository;
-import com.msauth.infrastructure.persistence.entity.UserEntity;
-import com.msauth.infrastructure.persistence.mapper.UserMapper;
-import com.msauth.infrastructure.persistence.repository.UserJpaRepository;
+import com.ms_auth.domain.entity.User;
+import com.ms_auth.domain.repository.UserRepository;
+import com.ms_auth.infrastructure.persistence.entity.UserEntity;
+import com.ms_auth.infrastructure.persistence.mapper.UserMapper;
+import com.ms_auth.infrastructure.persistence.repository.UserJpaRepository;
 import org.springframework.stereotype.Repository;
 
 import java.util.Optional;
@@ -23,6 +23,7 @@ public class UserRepositoryImpl implements UserRepository {
     public Optional<User> findByUsername(String username) {
         return userJpaRepository.findByUsername(username)
                 .map(userMapper::toDomain);
+//                .map(userMapper::toDomain);
     }
 
     @Override

@@ -1,6 +1,6 @@
 package com.ms_auth.infrastructure.persistence.repository;
 
-import com.msauth.infrastructure.persistence.entity.UserEntity;
+import com.ms_auth.infrastructure.persistence.entity.UserEntity;
 import org.springframework.data.jpa.repository.JpaRepository;
 import java.util.Optional;
 

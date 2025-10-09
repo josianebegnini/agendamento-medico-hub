@@ -1,12 +1,15 @@
 package com.ms_auth.application.usecase;
 
-import com.msauth.application.dto.AuthResponse;
-import com.msauth.application.dto.LoginRequest;
-import com.msauth.application.dto.UserCreateRequest;
-import com.msauth.domain.entity.User;
-import com.msauth.domain.service.TokenService;
-import com.msauth.domain.service.UserService;
+import com.ms_auth.application.dtos.AuthResponseDTO;
+import com.ms_auth.application.dtos.LoginRequestDTO;
+import com.ms_auth.application.dtos.UserCreateRequestDTO;
+import com.ms_auth.domain.entity.Role;
+import com.ms_auth.domain.entity.User;
+import com.ms_auth.domain.service.TokenService;
+import com.ms_auth.domain.service.UserService;
 import org.springframework.security.crypto.password.PasswordEncoder;
+
+import java.util.List;
 
 public class AuthUseCase {
     private final UserService userService;
@@ -20,11 +23,11 @@ public class AuthUseCase {
         this.passwordEncoder = passwordEncoder;
     }
 
-    public AuthResponse login(LoginRequest request) {
+    public AuthResponseDTO login(LoginRequestDTO request) {
         User user = userService.validateUser(request.username(), request.password());
         String token = tokenService.generateToken(user.getUsername());
 
-        return new AuthResponse(
+        return new AuthResponseDTO(
                 token,
                 "Bearer",
                 3600L,
@@ -32,7 +35,7 @@ public class AuthUseCase {
         );
     }
 
-    public AuthResponse register(UserCreateRequest request) {
+    public AuthResponseDTO register(UserCreateRequestDTO request) {
         User user = new User(
                 request.username(),
                 request.email(),
@@ -43,7 +46,7 @@ public class AuthUseCase {
         User savedUser = userService.createUser(user);
         String token = tokenService.generateToken(savedUser.getUsername());
 
-        return new AuthResponse(
+        return new AuthResponseDTO(
                 token,
                 "Bearer",
                 3600L,

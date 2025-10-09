@@ -1,6 +1,6 @@
 package com.ms_auth.domain.repository;
 
-import com.msauth.domain.entity.User;
+import com.ms_auth.domain.entity.User;
 import java.util.Optional;
 
 public interface UserRepository {

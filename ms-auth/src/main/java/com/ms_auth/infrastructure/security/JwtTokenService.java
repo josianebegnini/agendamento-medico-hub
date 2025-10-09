@@ -1,6 +1,6 @@
 package com.ms_auth.infrastructure.security;
 
-import com.msauth.domain.service.TokenService;
+import com.ms_auth.domain.service.TokenService;
 import io.jsonwebtoken.*;
 import io.jsonwebtoken.security.Keys;
 import org.springframework.beans.factory.annotation.Value;
@@ -12,14 +12,15 @@ import java.util.Date;
 @Service
 public class JwtTokenService implements TokenService {
 
-    @Value("${jwt.secret:mySecretKey}")
+    @Value("${jwt.secret:mySecretKeyForJWTGenerationThatIsAtLeast32BytesLong}")
     private String secret;
 
     @Value("${jwt.expiration:3600000}")
     private Long expiration;
 
     private SecretKey getSigningKey() {
-        return Keys.hmacShaKeyFor(secret.getBytes());
+        byte[] keyBytes = secret.getBytes();
+        return Keys.hmacShaKeyFor(keyBytes);
     }
 
     @Override
@@ -50,11 +51,12 @@ public class JwtTokenService implements TokenService {
 
     @Override
     public String extractUsername(String token) {
-        return Jwts.parserBuilder()
+        Claims claims = Jwts.parserBuilder()
                 .setSigningKey(getSigningKey())
                 .build()
                 .parseClaimsJws(token)
-                .getBody()
-                .getSubject();
+                .getBody();
+
+        return claims.getSubject();
     }
 }

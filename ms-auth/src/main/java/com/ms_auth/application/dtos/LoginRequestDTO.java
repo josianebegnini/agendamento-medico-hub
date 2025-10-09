@@ -1,8 +1,8 @@
-package com.ms_auth.application.dto;
+package com.ms_auth.application.dtos;
 
 import jakarta.validation.constraints.NotBlank;
 
-public record AuthResponseDTO(
+public record LoginRequestDTO(
         @NotBlank String username,
         @NotBlank String password
 ) {}

@@ -1,6 +1,8 @@
 package com.ms_auth.domain.service;
 
-import com.msauth.domain.entity.User;
+import com.ms_auth.domain.entity.User;
+
+import java.util.Optional;
 
 public interface UserService {
     User createUser(User user);
