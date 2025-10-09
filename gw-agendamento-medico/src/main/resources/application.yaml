@@ -1,5 +1,5 @@
 server:
-  port: 8080
+  port: 8085
 spring:
   application:
     name: api-gateway
@@ -27,3 +27,14 @@ spring:
               uri: http://localhost:8082
               predicates:
                 - Path=/api/convenios/**
+
+            - id: ms-auth
+              uri: http://localhost:8084
+              predicates:
+                - Path=/api/auth/**
+jwt:
+  secret: mySecretKeyForJWTGenerationThatIsAtLeast32BytesLong
+  public-paths:
+    - /api/auth/login
+    - /api/auth/register
+    - /actuator/health
