@@ -23,7 +23,6 @@ public class UserRepositoryImpl implements UserRepository {
     public Optional<User> findByUsername(String username) {
         return userJpaRepository.findByUsername(username)
                 .map(userMapper::toDomain);
-//                .map(userMapper::toDomain);
     }
 
     @Override

@@ -59,10 +59,6 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
 
         SecurityContextHolder.getContext().setAuthentication(authentication);
 
-        // Add user info to headers for downstream processing
-        // Note: In a microservices architecture, this would be passed to other services
-        // For now, we just set it in the security context
-
         filterChain.doFilter(request, response);
     }
 
