@@ -1,6 +1,19 @@
 version: "3.8"
 
 services:
+  postgres:
+    image: postgres:15
+    environment:
+      POSTGRES_DB: agendamento
+      POSTGRES_USER: user
+      POSTGRES_PASSWORD: pass
+    ports:
+      - "5435:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+volumes:
+  postgres_data:
+
   rabbitmq:
     image: rabbitmq:3-management
     container_name: rabbitmq
@@ -46,16 +59,33 @@ services:
       - ms-medico
       - ms-paciente
 
-  postgres:
-    image: postgres:15
-    environment:
-      POSTGRES_DB: agendamento
-      POSTGRES_USER: user
-      POSTGRES_PASSWORD: pass
+  ms-auth:
+    build:
+      context: ./ms-auth
+    container_name: ms-auth
     ports:
-      - "5435:5432"
-    volumes:
-      - postgres_data:/var/lib/postgresql/data
+      - "8084:8084"
+    depends_on:
+      - postgres
 
-volumes:
-  postgres_data:
+  gw-agendamento-medico:
+    build:
+      context: ./gw-agendamento-medico
+    container_name: gw-agendamento-medico
+    ports:
+      - "8085:8085"
+    depends_on:
+      - postgres
+      - ms-medico
+      - ms-paciente
+      - ms-agenda
+      - ms-auth
+
+  agendamento-medico-front:
+    build:
+      context: ./agendamento-medico-front
+    container_name: agendamento-medico-front
+    ports:
+      - "8080:8080"
+    depends_on:
+      - gw-agendamento-medico
