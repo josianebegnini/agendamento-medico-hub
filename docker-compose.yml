@@ -11,8 +11,7 @@ services:
       - "5435:5432"
     volumes:
       - postgres_data:/var/lib/postgresql/data
-volumes:
-  postgres_data:
+
 
   rabbitmq:
     image: rabbitmq:3-management
@@ -89,3 +88,6 @@ volumes:
       - "8080:8080"
     depends_on:
       - gw-agendamento-medico
+
+volumes:
+  postgres_data:
