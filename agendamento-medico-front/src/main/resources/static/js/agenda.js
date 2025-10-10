@@ -262,9 +262,15 @@ async function cancelarAgendamento(id) {
 }
 
 function resetFormulario() {
-  document.getElementById('agendaForm').reset();
-  document.getElementById('btnCancelarEdicao').classList.add('hidden');
-  document.getElementById('btnAgendar').textContent = 'Agendar';
+  const form = document.getElementById("agendaForm");
+  form.reset();
+
+  // 🔓 Reabilita selects para novo agendamento
+  document.getElementById("paciente").disabled = false;
+  document.getElementById("medico").disabled = false;
+
+  document.getElementById("btnCancelarEdicao").classList.add("hidden");
+  document.getElementById("btnAgendar").textContent = "Agendar";
 }
 
 function traduzirStatus(status) {
@@ -282,8 +288,6 @@ function cancelarEdicao() {
   resetFormulario();
 }
 
-// ✏️ Prepara formulário para edição de um agendamento existente
-// ✏️ Prepara formulário para edição de um agendamento existente
 function prepararEdicao(id) {
   const agendamento = agendamentos.find(a => a.id === id);
   if (!agendamento) {
@@ -291,25 +295,28 @@ function prepararEdicao(id) {
     return;
   }
 
-  // Extrai IDs corretamente, independentemente do formato retornado
-  const pacienteId = agendamento.pacienteId || agendamento.paciente?.id || "";
-  const medicoId = agendamento.medicoId || agendamento.medico?.id || "";
+  // Extrai IDs
+  const pacienteId = agendamento.pacienteId || "";
+  const medicoId = agendamento.medicoId || "";
 
-  // Preenche os campos do formulário
+  // Preenche o formulário
   document.getElementById("agendamentoId").value = agendamento.id;
   document.getElementById("paciente").value = pacienteId;
   document.getElementById("medico").value = medicoId;
   document.getElementById("tipoConsulta").value = agendamento.tipoConsulta || "PRESENCIAL";
 
-  // Formata data/hora para campo <input type="datetime-local">
   if (agendamento.dataHora) {
     const data = new Date(agendamento.dataHora);
-    const localISO = data.toISOString().slice(0, 16);
-    document.getElementById("dataHora").value = localISO;
+    document.getElementById("dataHora").value = data.toISOString().slice(0, 16);
   }
 
-  // Alterna botões
+  // 🔒 Desabilita campos que não devem ser alterados
+  document.getElementById("paciente").disabled = true;
+  document.getElementById("medico").disabled = true;
+
+  // Atualiza botões
   document.getElementById("btnAgendar").textContent = "Salvar alterações";
   document.getElementById("btnCancelarEdicao").classList.remove("hidden");
 }
+
 

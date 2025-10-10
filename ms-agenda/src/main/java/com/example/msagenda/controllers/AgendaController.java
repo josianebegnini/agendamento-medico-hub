@@ -110,4 +110,19 @@ public class AgendaController {
         service.deletar(id);
         return ResponseEntity.noContent().build();
     }
+
+    @PutMapping("/{id}")
+    @Operation(summary = "Atualiza um agendamento existente",
+            description = "Permite atualizar paciente, médico, data e tipo de consulta de um agendamento.")
+    @ApiResponse(responseCode = "200", description = "Agendamento atualizado com sucesso")
+    @ApiResponse(responseCode = "400", description = "Erro de validação")
+    @ApiResponse(responseCode = "404", description = "Agendamento não encontrado")
+    public ResponseEntity<AgendamentoResponseDTO> atualizar(
+            @PathVariable Long id,
+            @Valid @RequestBody AgendamentoRequestDTO dto) {
+
+        Agenda atualizado = service.atualizar(id, dto);
+        AgendamentoResponseDTO response = service.buscarPorIdComNomes(atualizado.getId());
+        return ResponseEntity.ok(response);
+    }
 }
