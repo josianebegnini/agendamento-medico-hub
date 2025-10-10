@@ -52,8 +52,10 @@ public class JwtAuthGlobalFilter implements GlobalFilter {
     }
 
     private boolean isPublicPath(String path) {
-        return publicPaths.stream().anyMatch(path::startsWith);
+        return publicPaths.stream().anyMatch(path::startsWith)
+                || path.matches("^/api/(pacientes|convenios)(/.*)?$");
     }
+
 
     private String extractToken(ServerWebExchange exchange) {
         String authHeader = exchange.getRequest().getHeaders().getFirst(HttpHeaders.AUTHORIZATION);

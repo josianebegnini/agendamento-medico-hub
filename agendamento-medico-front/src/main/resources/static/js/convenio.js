@@ -1,4 +1,4 @@
-const API_URL = '/api/convenios';
+const API_URL = `${API_BASE_URL}/api/convenios`;
 let currentPage = 1;
 const pageSize = 5;
 let convenios = [];

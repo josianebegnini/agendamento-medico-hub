@@ -1,93 +1,70 @@
 version: "3.8"
 
 services:
+  # 🐘 Banco de dados PostgreSQL
   postgres:
     image: postgres:15
+    container_name: postgres
+    restart: always
     environment:
       POSTGRES_DB: agendamento
       POSTGRES_USER: user
       POSTGRES_PASSWORD: pass
     ports:
-      - "5435:5432"
+      - "5432:5432"
     volumes:
       - postgres_data:/var/lib/postgresql/data
+    # 🔍 Healthcheck: garante que o banco está pronto antes de liberar dependentes
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U user -d agendamento"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
 
-
-  rabbitmq:
-    image: rabbitmq:3-management
-    container_name: rabbitmq
-    ports:
-      - "5672:5672"       # porta de comunicação do broker
-      - "15672:15672"     # painel web do RabbitMQ
-    environment:
-      RABBITMQ_DEFAULT_USER: guest
-      RABBITMQ_DEFAULT_PASS: guest
-
-  ms-medico:
-    build:
-      context: ./ms-medico
-    container_name: ms-medico
-    ports:
-      - "8081:8081"
-    depends_on:
-      - postgres
-
+  # 🧩 Microserviço de Pacientes
   ms-paciente:
     build:
       context: ./ms-paciente
     container_name: ms-paciente
+    restart: always
     ports:
       - "8082:8082"
     depends_on:
-      - postgres
-
-  ms-agenda:
-    build:
-      context: ./ms-agenda
-    container_name: ms-agenda
-    ports:
-      - "8083:8083"
+      postgres:
+        condition: service_healthy
     environment:
-      - SPRING_RABBITMQ_HOST=rabbitmq
-      - SPRING_RABBITMQ_PORT=5672
-      - SPRING_RABBITMQ_USERNAME=guest
-      - SPRING_RABBITMQ_PASSWORD=guest
-    depends_on:
-      - postgres
-      - rabbitmq
-      - ms-medico
-      - ms-paciente
+      SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/agendamento
+      SPRING_DATASOURCE_USERNAME: user
+      SPRING_DATASOURCE_PASSWORD: pass
+      SPRING_JPA_HIBERNATE_DDL_AUTO: update
+      SPRING_JPA_PROPERTIES_HIBERNATE_DIALECT: org.hibernate.dialect.PostgreSQLDialect
 
-  ms-auth:
-    build:
-      context: ./ms-auth
-    container_name: ms-auth
-    ports:
-      - "8084:8084"
-    depends_on:
-      - postgres
-
+  # 🌐 Gateway principal
   gw-agendamento-medico:
     build:
       context: ./gw-agendamento-medico
     container_name: gw-agendamento-medico
+    restart: always
     ports:
       - "8085:8085"
     depends_on:
-      - postgres
-      - ms-medico
       - ms-paciente
-      - ms-agenda
-      - ms-auth
+    environment:
+      SPRING_PROFILES_ACTIVE: docker
 
+  # 💻 Aplicação Front-End (HTML + Thymeleaf)
   agendamento-medico-front:
     build:
       context: ./agendamento-medico-front
     container_name: agendamento-medico-front
+    restart: always
     ports:
       - "8080:8080"
     depends_on:
       - gw-agendamento-medico
+    environment:
+      APP_GATEWAY_BASE_URL: http://gw-agendamento-medico:8085
 
+# 💾 Volume persistente para o PostgreSQL
 volumes:
   postgres_data:
