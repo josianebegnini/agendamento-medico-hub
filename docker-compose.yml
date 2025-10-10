@@ -79,6 +79,20 @@ services:
       - ms-paciente
       - ms-agenda
       - ms-auth
+  
+  mail:
+    build:
+      context: ./mail
+    container_name: mail
+    ports:
+      - "8086:8086"
+    environment:
+      - SPRING_RABBITMQ_HOST=rabbitmq
+      - SPRING_RABBITMQ_PORT=5672
+      - SPRING_RABBITMQ_USERNAME=guest
+      - SPRING_RABBITMQ_PASSWORD=guest
+    depends_on:
+      - rabbitmq
 
   agendamento-medico-front:
     build:
