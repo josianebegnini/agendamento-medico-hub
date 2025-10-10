@@ -12,6 +12,7 @@ A aplicação permite gerenciar:
 - 🩺 **Especialidades**
 - 🏥 **Convênios**
 - 📅 **Agendamentos de consultas médicas**
+- ✉️ **Envio de e-mail**
 
 ---
 
@@ -24,8 +25,8 @@ A aplicação permite gerenciar:
 ✅ Navegação entre páginas para cada módulo do sistema  
 ✅ Paginação na listagem de registros  
 ✅ Máscaras para campos (ex.: telefone) e validação de e-mail  
-✅ Backend robusto com **Spring Boot + JPA + Hibernate**  
-✅ Conexão com banco de dados relacional (H2/MySQL)  
+✅ Backend robusto com **Spring Boot + JPA + Autenticação e Autorização com Spring Security e JWT + Gateway**  
+✅ Conexão com banco de dados relacional (Postgre)  
 ✅ Documentação da API com **Swagger/OpenAPI**
 
 ---
@@ -61,6 +62,8 @@ http://localhost:8080/index.html
   - Pode ser facilmente adaptado para MySQL ou PostgreSQL
 - [Swagger / OpenAPI 3](https://swagger.io/) (documentação da API)
 - Gerenciador de dependências: **Maven**
+- Autenticação e Autorização usando Spring Security e JWT
+- Mensageria usando RabbitMQ
 
 ### 🔹 Frontend
 - HTML5, CSS3 e JavaScript puro
@@ -105,28 +108,28 @@ AgendamentoMedico/
 
 ## 📡 Endpoints Principais
 
-| Recurso          | Método  | URL                                        | Descrição                                 |
-|------------------|---------|--------------------------------------------|-------------------------------------------|
-| **Agendamentos** | GET     | `/agendas`                                 | Lista todos os agendamentos              |
-|                  | GET     | `/agendas/{id}`                            | Busca um agendamento por ID              |
-|                  | POST    | `/agendas/agendar`                         | Cria um novo agendamento                 |
-|                  | PUT     | `/agendas/{id}/remarcar`                   | Remarca um agendamento existente         |
-|                  | PATCH   | `/agendas/{id}/cancelar`                   | Cancela um agendamento                   |
-|                  | DELETE  | `/agendas/{id}`                            | Remove um agendamento                    |
-| **Médicos**      | GET     | `/api/medicos`                              | Lista todos os médicos (com paginação)   |
-|                  | GET     | `/api/medicos/{id}`                         | Busca um médico por ID                   |
-|                  | GET     | `/api/medicos/especialidade/{especialidade}`| Lista médicos por especialidade          |
-|                  | POST    | `/api/medicos`                              | Cadastra um novo médico                  |
-|                  | PUT     | `/api/medicos/{id}`                         | Atualiza um médico existente             |
-|                  | DELETE  | `/api/medicos/{id}`                         | Remove um médico                          |
-| **Pacientes**    | GET     | `/api/pacientes`                            | Lista todos os pacientes                 |
-|                  | GET     | `/api/pacientes/{id}`                       | Busca um paciente por ID                 |
-|                  | GET     | `/api/pacientes/email/{email}`              | Busca um paciente por email              |
-|                  | GET     | `/api/pacientes/search?nome={nome}`         | Busca pacientes por nome                 |
-|                  | POST    | `/api/pacientes`                            | Cadastra um novo paciente                |
-|                  | PUT     | `/api/pacientes/{id}`                       | Atualiza um paciente existente           |
-|                  | PATCH   | `/api/pacientes/{id}`                       | Atualiza parcialmente um paciente        |
-|                  | DELETE  | `/api/pacientes/{id}`                       | Remove um paciente                        |
+| Recurso          | Método  | URL                                          | Descrição                                 |
+|------------------|---------|----------------------------------------------|-------------------------------------------|
+| **Agendamentos** | GET     | `/api/agendas`                                   | Lista todos os agendamentos              |
+|                  | GET     | `/api/agendas/{id}`                              | Busca um agendamento por ID              |
+|                  | POST    | `/api/agendas/agendar`                           | Cria um novo agendamento                 |
+|                  | PUT     | `/api/agendas/{id}/remarcar`                     | Remarca um agendamento existente         |
+|                  | PATCH   | `/api/agendas/{id}/cancelar`                     | Cancela um agendamento                   |
+|                  | DELETE  | `/api/agendas/{id}`                          | Remove um agendamento                    |
+| **Médicos**      | GET     | `/api/medicos`                               | Lista todos os médicos (com paginação)   |
+|                  | GET     | `/api/medicos/{id}`                          | Busca um médico por ID                   |
+|                  | GET     | `/api/medicos/especialidade/{especialidade}` | Lista médicos por especialidade          |
+|                  | POST    | `/api/medicos`                               | Cadastra um novo médico                  |
+|                  | PUT     | `/api/medicos/{id}`                          | Atualiza um médico existente             |
+|                  | DELETE  | `/api/medicos/{id}`                          | Remove um médico                          |
+| **Pacientes**    | GET     | `/api/pacientes`                             | Lista todos os pacientes                 |
+|                  | GET     | `/api/pacientes/{id}`                        | Busca um paciente por ID                 |
+|                  | GET     | `/api/pacientes/email/{email}`               | Busca um paciente por email              |
+|                  | GET     | `/api/pacientes/search?nome={nome}`          | Busca pacientes por nome                 |
+|                  | POST    | `/api/pacientes`                             | Cadastra um novo paciente                |
+|                  | PUT     | `/api/pacientes/{id}`                        | Atualiza um paciente existente           |
+|                  | PATCH   | `/api/pacientes/{id}`                        | Atualiza parcialmente um paciente        |
+|                  | DELETE  | `/api/pacientes/{id}`                        | Remove um paciente                        |
 | **Convênios**    | GET     | `/api/convenios`                             | Lista todos os convênios                  |
 |                  | GET     | `/api/convenios/{id}`                        | Busca um convênio por ID                  |
 |                  | POST    | `/api/convenios`                             | Cadastra um novo convênio                 |
@@ -146,6 +149,7 @@ AgendamentoMedico/
 - Java 17+ instalado
 - Maven instalado
 - (Opcional) Docker, se for usar container
+- Docker Desktop
 
 ### 🔹 Passos
 
@@ -162,9 +166,9 @@ O perfil padrão mantém `spring.sql.init.mode=embedded`, evitando a execução 
    ```bash
    cd AgendamentoMedico
 
-3. Compile e execute:
+3. Compile e execute no docker:
    ```bash
-    mvn spring-boot:run
+    docker-compose up --build
    
 4. Acesse a aplicação no navegador:
    ```bash
