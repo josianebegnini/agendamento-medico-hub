@@ -1,5 +1,5 @@
-const API_MEDICOS = '/api/medicos';
-const API_ESPECIALIDADES = '/api/especialidades';
+const API_MEDICOS = `${API_GATEWAY_BASE}/api/medicos`;
+const API_ESPECIALIDADES = `${API_GATEWAY_BASE}/api/especialidades`;
 
 let paginaAtual = 0;
 const itensPorPagina = 5;

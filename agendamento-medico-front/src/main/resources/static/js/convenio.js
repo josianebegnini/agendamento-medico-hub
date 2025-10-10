@@ -1,4 +1,5 @@
-const API_URL = '/api/convenios';
+const API_URL = `${API_GATEWAY_BASE}/api/convenios`;
+
 let currentPage = 1;
 const pageSize = 5;
 let convenios = [];
@@ -39,15 +40,37 @@ function aplicarMascaraTelefone(event) {
 }
 
 async function carregarConvenios() {
-    try {
-        const response = await fetch(API_URL);
-        convenios = await response.json();
-        renderizarLista();
-    } catch (error) {
-        console.error(error);
-        document.getElementById('listaConvenios').innerHTML = '<li>Erro ao carregar convênios</li>';
+  const token = localStorage.getItem('token');
+  if (!token) {
+    alert('Você precisa estar logado!');
+    window.location.href = '/login.html';
+    return;
+  }
+
+  try {
+    const response = await fetch(`${API_URL}`, {
+      headers: {
+        'Authorization': `Bearer ${token}`
+      }
+    });
+
+    if (!response.ok) {
+      throw new Error('Erro ao carregar convênios');
     }
+
+    // Atualiza o array global de convenios
+    convenios = await response.json();
+
+    // Renderiza na tela
+    renderizarLista();
+
+  } catch (err) {
+    console.error('Erro ao carregar convenios:', err);
+    const lista = document.getElementById('listaConvenios');
+    lista.innerHTML = '<li>Erro ao carregar convênios.</li>';
+  }
 }
+
 
 function renderizarLista() {
     const lista = document.getElementById('listaConvenios');

@@ -1,8 +1,9 @@
-version: "3.8"
-
 services:
+  # 🗄️ Banco de Dados PostgreSQL
   postgres:
     image: postgres:15
+    container_name: postgres
+    restart: always
     environment:
       POSTGRES_DB: agendamento
       POSTGRES_USER: user
@@ -11,75 +12,105 @@ services:
       - "5435:5432"
     volumes:
       - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U user -d agendamento"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+      start_period: 10s
 
-
-  rabbitmq:
-    image: rabbitmq:3-management
-    container_name: rabbitmq
-    ports:
-      - "5672:5672"       # porta de comunicação do broker
-      - "15672:15672"     # painel web do RabbitMQ
-    environment:
-      RABBITMQ_DEFAULT_USER: guest
-      RABBITMQ_DEFAULT_PASS: guest
-
+  # 🩺 Microserviço de Médicos
   ms-medico:
     build:
       context: ./ms-medico
     container_name: ms-medico
+    restart: always
     ports:
       - "8081:8081"
+    environment:
+      SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/agendamento
+      SPRING_DATASOURCE_USERNAME: user
+      SPRING_DATASOURCE_PASSWORD: pass
     depends_on:
-      - postgres
+      postgres:
+        condition: service_healthy
 
+  # 👩‍⚕️ Microserviço de Pacientes
   ms-paciente:
     build:
       context: ./ms-paciente
     container_name: ms-paciente
+    restart: always
     ports:
       - "8082:8082"
+    environment:
+      SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/agendamento
+      SPRING_DATASOURCE_USERNAME: user
+      SPRING_DATASOURCE_PASSWORD: pass
     depends_on:
-      - postgres
+      postgres:
+        condition: service_healthy
 
+  # 📅 Microserviço de Agenda (usa CloudAMQP)
   ms-agenda:
     build:
       context: ./ms-agenda
     container_name: ms-agenda
+    restart: always
     ports:
       - "8083:8083"
     environment:
-      - SPRING_RABBITMQ_HOST=rabbitmq
-      - SPRING_RABBITMQ_PORT=5672
-      - SPRING_RABBITMQ_USERNAME=guest
-      - SPRING_RABBITMQ_PASSWORD=guest
+      SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/agendamento
+      SPRING_DATASOURCE_USERNAME: user
+      SPRING_DATASOURCE_PASSWORD: pass
+      SPRING_RABBITMQ_ADDRESSES: ${CLOUDAMQP_URL}
+      SPRING_RABBITMQ_SSL_ENABLED: "true"
     depends_on:
-      - postgres
-      - rabbitmq
-      - ms-medico
-      - ms-paciente
+      postgres:
+        condition: service_healthy
+      ms-medico:
+        condition: service_started
+      ms-paciente:
+        condition: service_started
 
+  # 🔐 Microserviço de Autenticação (JWT)
   ms-auth:
     build:
       context: ./ms-auth
     container_name: ms-auth
+    restart: always
     ports:
       - "8084:8084"
+    environment:
+      SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/agendamento
+      SPRING_DATASOURCE_USERNAME: user
+      SPRING_DATASOURCE_PASSWORD: pass
+      JWT_SECRET: mySecretKeyForJWTGenerationThatIsAtLeast32BytesLong
+      JWT_EXPIRATION: 3600000
     depends_on:
-      - postgres
+      postgres:
+        condition: service_healthy
 
+  # 🌐 API Gateway
   gw-agendamento-medico:
     build:
       context: ./gw-agendamento-medico
     container_name: gw-agendamento-medico
+    restart: always
     ports:
       - "8085:8085"
+    environment:
+      SPRING_PROFILES_ACTIVE: docker
     depends_on:
-      - postgres
-      - ms-medico
-      - ms-paciente
-      - ms-agenda
-      - ms-auth
-  
+      ms-medico:
+        condition: service_started
+      ms-paciente:
+        condition: service_started
+      ms-agenda:
+        condition: service_started
+      ms-auth:
+        condition: service_started
+
   mail:
     build:
       context: ./mail
@@ -94,14 +125,19 @@ services:
     depends_on:
       - rabbitmq
 
+  # 💻 Front-end (Spring Boot servindo HTML/JS/CSS)
   agendamento-medico-front:
     build:
       context: ./agendamento-medico-front
     container_name: agendamento-medico-front
+    restart: always
     ports:
       - "8080:8080"
+    environment:
+      APP_GATEWAY_BASE_URL: http://gw-agendamento-medico:8085
     depends_on:
-      - gw-agendamento-medico
+      gw-agendamento-medico:
+        condition: service_started
 
 volumes:
   postgres_data:

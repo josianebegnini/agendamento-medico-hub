@@ -1,6 +1,6 @@
-const API_PACIENTES = '/api/pacientes';
-const API_MEDICOS   = '/api/medicos';
-const API_AGENDAS   = '/agendas';
+const API_PACIENTES = `${API_GATEWAY_BASE}/api/pacientes`;
+const API_MEDICOS   = `${API_GATEWAY_BASE}/api/medicos`;
+const API_AGENDAS   = `${API_GATEWAY_BASE}/api/agendas`;
 
 let agendamentos = [];
 let paginaAtual = 1;

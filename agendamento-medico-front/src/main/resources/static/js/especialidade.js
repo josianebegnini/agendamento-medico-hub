@@ -1,4 +1,5 @@
-const API_URL = '/api/especialidades';
+const API_URL = `${API_GATEWAY_BASE}/api/especialidades`;
+
 let currentPage = 1;
 const pageSize = 10;
 let especialidades = [];

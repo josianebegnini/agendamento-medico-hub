@@ -1,5 +1,5 @@
-const API_URL = '/api/pacientes';
-const API_CONVENIOS = '/api/convenios';
+const API_URL = `${API_GATEWAY_BASE}/api/pacientes`;
+const API_CONVENIOS = `${API_GATEWAY_BASE}/api/convenios`;
 
 let pacientes = [];
 let paginaAtual = 1;
