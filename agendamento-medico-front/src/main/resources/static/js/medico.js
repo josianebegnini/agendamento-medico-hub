@@ -8,7 +8,10 @@ let especialidadeSelecionada = '';
 let medicoEmEdicaoId = null;
 let medicosCache = [];
 
+// 🔒 Garante que o usuário esteja logado
 document.addEventListener('DOMContentLoaded', () => {
+  verificarLogin();
+
   carregarEspecialidadesForm();
   carregarEspecialidadesFiltro();
   carregarMedicos();
@@ -16,9 +19,7 @@ document.addEventListener('DOMContentLoaded', () => {
   document.getElementById('medicoForm').addEventListener('submit', salvarMedico);
 
   const cancelarBtn = document.getElementById('cancelarEdicao');
-  if (cancelarBtn) {
-    cancelarBtn.addEventListener('click', cancelarEdicao);
-  }
+  if (cancelarBtn) cancelarBtn.addEventListener('click', cancelarEdicao);
 
   document.getElementById('prevPage').addEventListener('click', () => {
     if (paginaAtual > 0) {
@@ -41,67 +42,111 @@ document.addEventListener('DOMContentLoaded', () => {
   });
 });
 
-function carregarEspecialidadesForm() {
-  return fetch(API_ESPECIALIDADES)
-    .then(res => res.json())
-    .then(data => {
-      const select = document.getElementById('especialidades');
-      if (!select) return;
-      select.innerHTML = '';
-      data.forEach(esp => {
-        const option = document.createElement('option');
-        option.value = esp.id;
-        option.textContent = esp.nome;
-        select.appendChild(option);
-      });
-    })
-    .catch(err => console.error('Erro ao carregar especialidades (form):', err));
-}
-
-function carregarEspecialidadesFiltro() {
-  fetch(API_ESPECIALIDADES)
-    .then(res => res.json())
-    .then(data => {
-      const filtroSelect = document.getElementById('filtroEspecialidade');
-      if (!filtroSelect) return;
-      filtroSelect.innerHTML = '<option value="">Todas</option>';
-      data.forEach(esp => {
-        const option = document.createElement('option');
-        option.value = esp.nome;
-        option.textContent = esp.nome;
-        filtroSelect.appendChild(option);
-      });
-    })
-    .catch(err => console.error('Erro ao carregar especialidades (filtro):', err));
-}
-
-function carregarMedicos() {
-  let url;
-  if (especialidadeSelecionada) {
-    url = `${API_MEDICOS}/especialidade/${encodeURIComponent(especialidadeSelecionada)}?page=${paginaAtual}&size=${itensPorPagina}`;
-  } else {
-    url = `${API_MEDICOS}?page=${paginaAtual}&size=${itensPorPagina}`;
+// ✅ Verifica token
+function verificarLogin() {
+  const token = localStorage.getItem('token');
+  if (!token) {
+    alert('Você precisa estar logado!');
+    window.location.href = '/login.html';
+    throw new Error('Token JWT ausente.');
   }
-
-  fetch(url)
-    .then(res => res.json())
-    .then(data => {
-      const medicos = data && Array.isArray(data.content) ? data.content : [];
-      const paginasRecebidas = data && typeof data.totalPages === 'number' ? data.totalPages : 1;
-      totalPaginas = Math.max(paginasRecebidas, 1);
-
-      if (medicos.length === 0 && paginaAtual > 0) {
-        paginaAtual = Math.max(0, paginaAtual - 1);
-        carregarMedicos();
-        return;
-      }
-
-      medicosCache = medicos;
-      renderizarMedicos(medicos);
-    })
-    .catch(err => console.error('Erro ao carregar médicos:', err));
 }
 
+// ✅ Headers autenticados
+function getAuthHeaders() {
+  const token = localStorage.getItem('token');
+  if (!token) throw new Error('Token ausente');
+  return {
+    'Authorization': `Bearer ${token}`,
+    'Content-Type': 'application/json'
+  };
+}
+
+// 🏥 Carrega especialidades (formulário)
+async function carregarEspecialidadesForm() {
+  try {
+    const res = await fetch(API_ESPECIALIDADES, {
+      method: 'GET',
+      mode: 'cors',
+      credentials: 'include',
+      headers: getAuthHeaders()
+    });
+
+    if (!res.ok) throw new Error(`Erro ${res.status}`);
+
+    const data = await res.json();
+    const select = document.getElementById('especialidades');
+    if (!select) return;
+    select.innerHTML = '';
+
+    data.forEach(esp => {
+      const option = document.createElement('option');
+      option.value = esp.id;
+      option.textContent = esp.nome;
+      select.appendChild(option);
+    });
+  } catch (err) {
+    console.error('❌ Erro ao carregar especialidades (form):', err);
+  }
+}
+
+// 🎯 Carrega especialidades (filtro)
+async function carregarEspecialidadesFiltro() {
+  try {
+    const res = await fetch(API_ESPECIALIDADES, {
+      method: 'GET',
+      mode: 'cors',
+      credentials: 'include',
+      headers: getAuthHeaders()
+    });
+
+    if (!res.ok) throw new Error(`Erro ${res.status}`);
+
+    const data = await res.json();
+    const filtroSelect = document.getElementById('filtroEspecialidade');
+    if (!filtroSelect) return;
+
+    filtroSelect.innerHTML = '<option value="">Todas</option>';
+    data.forEach(esp => {
+      const option = document.createElement('option');
+      option.value = esp.nome;
+      option.textContent = esp.nome;
+      filtroSelect.appendChild(option);
+    });
+  } catch (err) {
+    console.error('❌ Erro ao carregar especialidades (filtro):', err);
+  }
+}
+
+// 👨‍⚕️ Carrega médicos
+async function carregarMedicos() {
+  try {
+    let url = especialidadeSelecionada
+      ? `${API_MEDICOS}/especialidade/${encodeURIComponent(especialidadeSelecionada)}?page=${paginaAtual}&size=${itensPorPagina}`
+      : `${API_MEDICOS}?page=${paginaAtual}&size=${itensPorPagina}`;
+
+    const res = await fetch(url, {
+      method: 'GET',
+      mode: 'cors',
+      credentials: 'include',
+      headers: getAuthHeaders()
+    });
+
+    if (!res.ok) throw new Error(`Erro ${res.status}`);
+
+    const data = await res.json();
+    const medicos = Array.isArray(data.content) ? data.content : [];
+    totalPaginas = data.totalPages || 1;
+
+    medicosCache = medicos;
+    renderizarMedicos(medicos);
+  } catch (err) {
+    console.error('❌ Erro ao carregar médicos:', err);
+    document.getElementById('medicosList').innerHTML = '<p>Erro ao carregar médicos.</p>';
+  }
+}
+
+// 🧩 Renderiza lista
 function renderizarMedicos(medicos) {
   const container = document.getElementById('medicosList');
   const pageInfo = document.getElementById('pageInfo');
@@ -117,44 +162,28 @@ function renderizarMedicos(medicos) {
       const card = document.createElement('div');
       card.classList.add('medico-card');
 
-      const info = document.createElement('div');
-      info.classList.add('medico-info');
-      info.innerHTML = `
-        <p><strong>Nome:</strong> ${medico.nome}</p>
-        <p><strong>CRM:</strong> ${medico.crm}</p>
-        <p><strong>Endereço:</strong> ${medico.endereco}</p>
-        <p><strong>Especialidades:</strong> ${medico.especialidades.join(', ')}</p>
+      card.innerHTML = `
+        <div class="medico-info">
+          <p><strong>Nome:</strong> ${medico.nome}</p>
+          <p><strong>CRM:</strong> ${medico.crm}</p>
+          <p><strong>Endereço:</strong> ${medico.endereco}</p>
+          <p><strong>Especialidades:</strong> ${medico.especialidades?.join(', ')}</p>
+        </div>
+        <div class="action-buttons">
+          <button class="btn-secondary" onclick="iniciarEdicao(${medico.id})">Editar</button>
+          <button class="btn-danger" onclick="excluirMedico(${medico.id})">Excluir</button>
+        </div>
       `;
-
-      const actions = document.createElement('div');
-      actions.classList.add('action-buttons');
-
-      const editButton = document.createElement('button');
-      editButton.type = 'button';
-      editButton.classList.add('btn-secondary');
-      editButton.textContent = 'Editar';
-      editButton.addEventListener('click', () => iniciarEdicao(medico));
-
-      const deleteButton = document.createElement('button');
-      deleteButton.type = 'button';
-      deleteButton.classList.add('btn-danger');
-      deleteButton.textContent = 'Excluir';
-      deleteButton.addEventListener('click', () => excluirMedico(medico.id));
-
-      actions.appendChild(editButton);
-      actions.appendChild(deleteButton);
-
-      card.appendChild(info);
-      card.appendChild(actions);
       container.appendChild(card);
     });
   }
 
-  pageInfo.textContent = `Página ${Math.min(paginaAtual + 1, totalPaginas)} de ${totalPaginas}`;
+  pageInfo.textContent = `Página ${paginaAtual + 1} de ${totalPaginas}`;
   prevBtn.disabled = paginaAtual === 0;
   nextBtn.disabled = paginaAtual >= totalPaginas - 1;
 }
 
+// 💾 Salvar médico
 async function salvarMedico(event) {
   event.preventDefault();
 
@@ -162,100 +191,49 @@ async function salvarMedico(event) {
   const crm = document.getElementById('crm').value.trim();
   const endereco = document.getElementById('endereco').value.trim();
   const especialidades = Array.from(document.getElementById('especialidades').selectedOptions)
-    .map(opt => parseInt(opt.value, 10));
-
-  if (!crm) {
-    alert('Informe o CRM.');
-    return;
-  }
-
-  try {
-    const crmDuplicado = await crmJaExiste(crm);
-    if (crmDuplicado) {
-      alert('Já existe um médico cadastrado com este CRM.');
-      return;
-    }
-  } catch (validacaoErro) {
-    alert(validacaoErro.message || 'Não foi possível validar o CRM. Tente novamente.');
-    return;
-  }
+    .map(opt => parseInt(opt.value));
 
   const medico = { nome, crm, endereco, especialidades };
-  if (medicoEmEdicaoId) {
-    medico.id = medicoEmEdicaoId;
-  }
-
   const url = medicoEmEdicaoId ? `${API_MEDICOS}/${medicoEmEdicaoId}` : API_MEDICOS;
-  const metodo = medicoEmEdicaoId ? 'PUT' : 'POST';
+  const method = medicoEmEdicaoId ? 'PUT' : 'POST';
 
-  fetch(url, {
-    method: metodo,
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify(medico)
-  })
-    .then(res => {
-      if (!res.ok) throw new Error('Erro ao salvar médico');
-      return res.status === 204 ? null : res.json();
-    })
-    .then(() => {
-      if (medicoEmEdicaoId) {
-        alert('Médico atualizado com sucesso!');
-      } else {
-        alert('Médico cadastrado com sucesso!');
-        especialidadeSelecionada = '';
-        const filtro = document.getElementById('filtroEspecialidade');
-        if (filtro) filtro.value = '';
-        paginaAtual = 0;
-      }
-      cancelarEdicao();
-      carregarMedicos();
-    })
-    .catch(err => {
-      alert(err.message);
-      if (medicoEmEdicaoId) {
-        cancelarEdicao();
-      } else {
-        resetFormularioMedico();
-      }
+  try {
+    const res = await fetch(url, {
+      method,
+      mode: 'cors',
+      credentials: 'include',
+      headers: getAuthHeaders(),
+      body: JSON.stringify(medico)
     });
-}
 
-function iniciarEdicao(medico) {
-  medicoEmEdicaoId = medico.id;
-  document.getElementById('formTitle').textContent = 'Editar Médico';
-  document.getElementById('submitButton').textContent = 'Atualizar Médico';
-  document.getElementById('cancelarEdicao').classList.remove('hidden');
-
-  document.getElementById('nome').value = medico.nome || '';
-  document.getElementById('crm').value = medico.crm || '';
-  document.getElementById('endereco').value = medico.endereco || '';
-
-  const select = document.getElementById('especialidades');
-  if (!select.options.length) {
-    carregarEspecialidadesForm().then(() => selecionarEspecialidades(select, medico.especialidades));
-  } else {
-    selecionarEspecialidades(select, medico.especialidades);
+    if (!res.ok) throw new Error(`Erro ${res.status}`);
+    alert(medicoEmEdicaoId ? 'Médico atualizado com sucesso!' : 'Médico cadastrado com sucesso!');
+    cancelarEdicao();
+    carregarMedicos();
+  } catch (err) {
+    console.error('❌ Erro ao salvar médico:', err);
+    alert('Erro ao salvar médico.');
   }
 }
 
-function selecionarEspecialidades(select, nomesEspecialidades) {
-  const listaNomes = Array.isArray(nomesEspecialidades) ? nomesEspecialidades : [];
-  Array.from(select.options).forEach(option => {
-    option.selected = listaNomes.includes(option.textContent);
-  });
-}
+// ❌ Excluir médico
+async function excluirMedico(id) {
+  if (!confirm('Deseja realmente excluir este médico?')) return;
 
-function resetFormularioMedico() {
-  const form = document.getElementById('medicoForm');
-  if (form) {
-    form.reset();
-  }
-
-  const select = document.getElementById('especialidades');
-  if (select) {
-    Array.from(select.options).forEach(option => {
-      option.selected = false;
+  try {
+    const res = await fetch(`${API_MEDICOS}/${id}`, {
+      method: 'DELETE',
+      mode: 'cors',
+      credentials: 'include',
+      headers: getAuthHeaders()
     });
+
+    if (!res.ok) throw new Error(`Erro ${res.status}`);
+    alert('Médico excluído com sucesso!');
+    carregarMedicos();
+  } catch (err) {
+    console.error('❌ Erro ao excluir médico:', err);
+    alert('Erro ao excluir médico.');
   }
 }
 
@@ -264,99 +242,41 @@ function cancelarEdicao() {
   document.getElementById('formTitle').textContent = 'Novo Médico';
   document.getElementById('submitButton').textContent = 'Salvar Médico';
   document.getElementById('cancelarEdicao').classList.add('hidden');
-
-  resetFormularioMedico();
+  document.getElementById('medicoForm').reset();
 }
 
-function excluirMedico(id) {
-  if (!confirm('Deseja realmente excluir este médico?')) {
+// ✏️ Função para iniciar edição do médico
+function iniciarEdicao(id) {
+  const medico = medicosCache.find(m => m.id === id);
+  if (!medico) {
+    alert('Médico não encontrado!');
     return;
   }
 
-  fetch(`${API_MEDICOS}/${id}`, {
-    method: 'DELETE'
-  })
-    .then(res => {
-      if (!res.ok) throw new Error('Erro ao excluir médico');
-    })
-    .then(() => {
-      alert('Médico excluído com sucesso!');
-      if (medicoEmEdicaoId === id) {
-        cancelarEdicao();
-      }
-      if (medicosCache.length <= 1 && paginaAtual > 0) {
-        paginaAtual--;
-      }
-      carregarMedicos();
-    })
-    .catch(err => alert(err.message));
-}
+  medicoEmEdicaoId = medico.id;
+  document.getElementById('formTitle').textContent = 'Editar Médico';
+  document.getElementById('submitButton').textContent = 'Atualizar Médico';
+  document.getElementById('cancelarEdicao').classList.remove('hidden');
 
-async function crmJaExiste(crm) {
-  const crmNormalizado = crm.toLowerCase();
-  const tamanhoPaginaValidacao = itensPorPagina;
+  // Preenche campos
+  document.getElementById('nome').value = medico.nome || '';
+  document.getElementById('crm').value = medico.crm || '';
+  document.getElementById('endereco').value = medico.endereco || '';
 
-  try {
-    let pagina = 0;
-
-    while (true) {
-      const resposta = await fetch(`${API_MEDICOS}?page=${pagina}&size=${tamanhoPaginaValidacao}`);
-      if (!resposta.ok) {
-        throw new Error();
-      }
-
-      const dados = await resposta.json();
-      const medicos = extrairMedicosDaResposta(dados);
-
-      const crmDuplicado = medicos.some(medico => {
-        if (!medico || !medico.crm) {
-          return false;
-        }
-
-        const mesmoCrm = medico.crm.toLowerCase() === crmNormalizado;
-        const mesmoMedico = medicoEmEdicaoId && Number(medico.id) === Number(medicoEmEdicaoId);
-
-        return mesmoCrm && !mesmoMedico;
-      });
-
-      if (crmDuplicado) {
-        return true;
-      }
-
-      const totalPaginasResposta = obterTotalPaginasDaResposta(dados);
-      const ultimaPagina = totalPaginasResposta === null || pagina >= totalPaginasResposta - 1;
-      const semMedicos = !medicos.length;
-
-      if (ultimaPagina || semMedicos) {
-        break;
-      }
-
-      pagina += 1;
-    }
-
-    return false;
-  } catch (erro) {
-    console.error('Erro ao validar CRM:', erro);
-    throw new Error('Não foi possível validar o CRM. Tente novamente.');
+  // Preenche especialidades selecionadas
+  const select = document.getElementById('especialidades');
+  if (!select.options.length) {
+    // se o select ainda não foi carregado, busca as especialidades primeiro
+    carregarEspecialidadesForm().then(() => selecionarEspecialidades(select, medico.especialidades));
+  } else {
+    selecionarEspecialidades(select, medico.especialidades);
   }
 }
 
-function extrairMedicosDaResposta(dados) {
-  if (Array.isArray(dados)) {
-    return dados;
-  }
-
-  if (dados && Array.isArray(dados.content)) {
-    return dados.content;
-  }
-
-  return [];
-}
-
-function obterTotalPaginasDaResposta(dados) {
-  if (dados && typeof dados.totalPages === 'number') {
-    return dados.totalPages;
-  }
-
-  return null;
+// 🧩 Seleciona as especialidades do médico
+function selecionarEspecialidades(select, nomesEspecialidades) {
+  const listaNomes = Array.isArray(nomesEspecialidades) ? nomesEspecialidades : [];
+  Array.from(select.options).forEach(option => {
+    option.selected = listaNomes.includes(option.textContent);
+  });
 }
