@@ -8,9 +8,12 @@ import com.example.msagenda.models.Agenda;
 import com.example.msagenda.services.AgendaService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
+import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
 
 import java.time.LocalDateTime;
@@ -30,6 +33,7 @@ public class AgendaController {
     }
 
     @GetMapping
+    @SecurityRequirement(name = "bearerAuth")
     @Operation(summary = "Lista todos os agendamentos",
             description = "Retorna todos os agendamentos cadastrados.")
     @ApiResponse(responseCode = "200", description = "Agendamentos listados com sucesso")
@@ -56,9 +60,14 @@ public class AgendaController {
             description = "Cria um novo agendamento vinculando paciente, médico e data da consulta.")
     @ApiResponse(responseCode = "201", description = "Consulta agendada com sucesso")
     @ApiResponse(responseCode = "400", description = "Erro de validação nos parâmetros")
-    // Reaproveitamos o serviço para orquestrar a criação do agendamento porque ele valida a
-    // disponibilidade de recursos e garante integridade, convertendo o resultado para DTO no retorno.
-    public ResponseEntity<AgendamentoResponseDTO> agendar(@Valid @RequestBody AgendamentoRequestDTO dto) {
+    @ApiResponse(responseCode = "401", description = "Token JWT inválido ou ausente")
+    @PreAuthorize("hasAnyRole('ROLE_USER', 'ROLE_ADMIN')")
+    public ResponseEntity<AgendamentoResponseDTO> agendar(@Valid @RequestBody AgendamentoRequestDTO dto,
+                                                          Authentication authentication) {
+        String username = authentication.getName();
+        System.out.println("Novo agendamento solicitado por: " + username);
+
+        // Você pode adicionar lógica para vincular o usuário autenticado ao agendamento
         AgendamentoResponseDTO response = service.agendarComNomes(dto);
         return ResponseEntity.ok(response);
     }
