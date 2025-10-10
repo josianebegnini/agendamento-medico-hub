@@ -1,5 +1,5 @@
-const API_URL = '/api/pacientes';
-const API_CONVENIOS = '/api/convenios';
+const API_URL = `${API_GATEWAY_BASE}/api/pacientes`;
+const API_CONVENIOS = `${API_GATEWAY_BASE}/api/convenios`;
 
 let pacientes = [];
 let paginaAtual = 1;
@@ -7,18 +7,17 @@ const itensPorPagina = 10;
 let pacienteEmEdicaoId = null;
 
 document.addEventListener('DOMContentLoaded', () => {
+    // ✅ Aguarda carregar token antes de iniciar as requisições
+    verificarLogin();
+
     carregarPacientes();
     carregarConvenios();
 
     const form = document.getElementById('pacienteForm');
-    if (form) {
-        form.addEventListener('submit', salvarPaciente);
-    }
+    if (form) form.addEventListener('submit', salvarPaciente);
 
     const cancelarBtn = document.getElementById('btnCancelar');
-    if (cancelarBtn) {
-        cancelarBtn.addEventListener('click', cancelarEdicaoPaciente);
-    }
+    if (cancelarBtn) cancelarBtn.addEventListener('click', cancelarEdicaoPaciente);
 
     document.getElementById('prevPage').addEventListener('click', () => mudarPagina(-1));
     document.getElementById('nextPage').addEventListener('click', () => mudarPagina(1));
@@ -26,26 +25,68 @@ document.addEventListener('DOMContentLoaded', () => {
     document.getElementById('telefonePaciente').addEventListener('input', aplicarMascaraTelefone);
 });
 
-async function carregarPacientes() {
-    const lista = document.getElementById('listaPacientes');
-    lista.innerHTML = '<li>Carregando...</li>';
-
-    try {
-        const response = await fetch(API_URL);
-        pacientes = await response.json();
-        exibirPacientes();
-    } catch (error) {
-        lista.innerHTML = '<li>Erro ao carregar pacientes</li>';
-        console.error(error);
+// 🔒 Valida se o usuário está autenticado
+function verificarLogin() {
+    const token = localStorage.getItem('token');
+    if (!token) {
+        alert('Você precisa estar logado!');
+        window.location.href = '/login.html';
     }
 }
 
+// 🔐 Função padrão para headers autenticados
+function getAuthHeaders() {
+    const token = localStorage.getItem('token');
+    if (!token) {
+        console.warn('⚠️ Token JWT não encontrado no localStorage!');
+        alert('Você precisa estar logado!');
+        window.location.href = '/login.html';
+        throw new Error('Token ausente');
+    }
+
+    console.log('🔐 Token carregado do localStorage:', token);
+    return {
+        'Authorization': `Bearer ${token}`,
+        'Content-Type': 'application/json'
+    };
+}
+
+// 🧾 Carrega todos os pacientes
+async function carregarPacientes() {
+  const lista = document.getElementById('listaPacientes');
+  lista.innerHTML = '<li>Carregando...</li>';
+
+  try {
+    const response = await fetch(API_URL, {
+      method: 'GET',
+      mode: 'cors',
+      credentials: 'include',
+      headers: getAuthHeaders()
+    });
+
+    if (!response.ok) throw new Error(`Erro HTTP ${response.status}`);
+
+    pacientes = await response.json();
+    exibirPacientes();
+
+  } catch (error) {
+    console.error('Erro ao carregar pacientes:', error);
+    lista.innerHTML = '<li>Erro ao carregar pacientes.</li>';
+  }
+}
+
+
+// 🏥 Carrega os convênios no select
 async function carregarConvenios() {
     try {
-        const response = await fetch(API_CONVENIOS);
-        const convenios = await response.json();
+        const response = await fetch(API_CONVENIOS, { headers: getAuthHeaders() });
 
+        if (!response.ok) throw new Error(`Erro ${response.status}`);
+
+        const convenios = await response.json();
         const select = document.getElementById('convenioPaciente');
+        select.innerHTML = '<option value="">Selecione um convênio</option>';
+
         convenios.forEach(conv => {
             const option = document.createElement('option');
             option.value = conv.id;
@@ -53,10 +94,11 @@ async function carregarConvenios() {
             select.appendChild(option);
         });
     } catch (error) {
-        console.error('Erro ao carregar convênios', error);
+        console.error('❌ Erro ao carregar convênios:', error);
     }
 }
 
+// 🧍 Renderiza a lista de pacientes
 function exibirPacientes() {
     const lista = document.getElementById('listaPacientes');
     lista.innerHTML = '';
@@ -65,26 +107,28 @@ function exibirPacientes() {
     const fim = inicio + itensPorPagina;
     const pacientesPagina = pacientes.slice(inicio, fim);
 
-    pacientesPagina.forEach(p => {
-        const li = document.createElement('li');
-        li.innerHTML = `
-            <span class="long-text">${p.id} - ${p.nome} (${p.email})</span>
-            <div>
-                <button class="btn-action" onclick="editar(${p.id})">Editar</button>
-                <button class="btn-action" onclick="deletarPaciente(${p.id})">Excluir</button>
-            </div>
-        `;
-        lista.appendChild(li);
-    });
-
     if (pacientesPagina.length === 0) {
         lista.innerHTML = '<li>Nenhum paciente cadastrado.</li>';
+    } else {
+        pacientesPagina.forEach(p => {
+            const li = document.createElement('li');
+            li.innerHTML = `
+                <span class="long-text">${p.id} - ${p.nome} (${p.email})</span>
+                <div>
+                    <button class="btn-action" onclick="editar(${p.id})">Editar</button>
+                    <button class="btn-action" onclick="deletarPaciente(${p.id})">Excluir</button>
+                </div>
+            `;
+            lista.appendChild(li);
+        });
     }
 
+    const totalPaginas = Math.ceil(pacientes.length / itensPorPagina);
     document.getElementById('pageInfo').textContent =
-        `Página ${paginaAtual} de ${Math.ceil(pacientes.length / itensPorPagina)}`;
+        `Página ${paginaAtual} de ${totalPaginas || 1}`;
 }
 
+// 🔁 Paginação simples
 function mudarPagina(direcao) {
     const totalPaginas = Math.ceil(pacientes.length / itensPorPagina);
     if (paginaAtual + direcao >= 1 && paginaAtual + direcao <= totalPaginas) {
@@ -93,6 +137,7 @@ function mudarPagina(direcao) {
     }
 }
 
+// 💾 Salvar ou atualizar paciente
 async function salvarPaciente(event) {
     event.preventDefault();
 
@@ -117,55 +162,62 @@ async function salvarPaciente(event) {
     const paciente = { nome, email, telefone, dataNascimento, convenioId };
 
     try {
-        if (id) {
-            await fetch(`${API_URL}/${id}`, {
-                method: 'PUT',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(paciente)
-            });
-        } else {
-            await fetch(API_URL, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(paciente)
-            });
+        const method = id ? 'PUT' : 'POST';
+        const url = id ? `${API_URL}/${id}` : API_URL;
+
+        const response = await fetch(url, {
+            method,
+            headers: getAuthHeaders(),
+            body: JSON.stringify(paciente)
+        });
+
+        if (!response.ok) {
+            const errorData = await response.json();
+            throw new Error(errorData.message || 'Erro ao salvar paciente');
         }
 
         alert(id ? 'Paciente atualizado com sucesso!' : 'Paciente salvo com sucesso!');
         cancelarEdicaoPaciente();
-        carregarPacientes();
+        await carregarPacientes();
 
     } catch (error) {
-        console.error(error);
-        alert('Erro ao salvar paciente!');
-        if (pacienteEmEdicaoId) {
-            cancelarEdicaoPaciente();
-        } else {
-            resetFormularioPaciente();
-        }
+        console.error('❌ Erro ao salvar paciente:', error);
+        alert(error.message || 'Erro ao salvar paciente!');
     }
 }
 
+// ✏️ Edição de paciente
 function editar(id) {
     const paciente = pacientes.find(p => p.id === id);
     if (!paciente) return;
-
     iniciarEdicaoPaciente(paciente);
 }
 
+// ❌ Excluir paciente
 async function deletarPaciente(id) {
     if (!confirm('Deseja realmente excluir este paciente?')) return;
 
     try {
-        await fetch(`${API_URL}/${id}`, { method: 'DELETE' });
+        const response = await fetch(`${API_URL}/${id}`, {
+            method: 'DELETE',
+            headers: getAuthHeaders()
+        });
+
+        if (!response.ok) {
+            const errorData = await response.json();
+            throw new Error(errorData.message || 'Erro ao excluir paciente');
+        }
+
         alert('Paciente excluído com sucesso!');
-        carregarPacientes();
+        await carregarPacientes();
+
     } catch (error) {
-        console.error(error);
-        alert('Erro ao excluir paciente!');
+        console.error('❌ Erro ao excluir paciente:', error);
+        alert(error.message || 'Erro ao excluir paciente!');
     }
 }
 
+// 🧩 Preenche o formulário para edição
 function iniciarEdicaoPaciente(paciente) {
     pacienteEmEdicaoId = paciente.id;
 
@@ -181,14 +233,14 @@ function iniciarEdicaoPaciente(paciente) {
     document.getElementById('convenioPaciente').value = paciente.convenio ? paciente.convenio.id : '';
 }
 
+// 🧹 Reset formulário
 function resetFormularioPaciente() {
     const form = document.getElementById('pacienteForm');
-    if (form) {
-        form.reset();
-    }
+    if (form) form.reset();
     document.getElementById('idPaciente').value = '';
 }
 
+// 🚫 Cancela edição
 function cancelarEdicaoPaciente() {
     pacienteEmEdicaoId = null;
 
@@ -199,6 +251,7 @@ function cancelarEdicaoPaciente() {
     resetFormularioPaciente();
 }
 
+// ☎️ Máscara telefone
 function aplicarMascaraTelefone(event) {
     let valor = event.target.value.replace(/\D/g, '');
     if (valor.length > 11) valor = valor.slice(0, 11);

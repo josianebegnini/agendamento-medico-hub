@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="pt-BR">
+<html lang="pt-BR" xmlns:th="http://www.thymeleaf.org">
 <head>
     <meta charset="UTF-8">
     <title>Gerenciar Especialidades</title>
@@ -59,7 +59,9 @@
         <p>© 2025 Agendamento Médico</p>
     </footer>
 </div>
-
+<script th:inline="javascript">
+    const API_GATEWAY_BASE = /*[[${@environment.getProperty('app.gateway.base-url')}]]*/ 'http://localhost:8085';
+</script>
 <script src="/js/especialidade.js"></script>
 </body>
 </html>

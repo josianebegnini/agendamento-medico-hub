@@ -1,4 +1,5 @@
-const API_URL = '/api/convenios';
+const API_URL = `${API_GATEWAY_BASE}/api/convenios`;
+
 let currentPage = 1;
 const pageSize = 5;
 let convenios = [];
@@ -24,9 +25,9 @@ document.addEventListener('DOMContentLoaded', () => {
     telefoneInput.addEventListener('input', aplicarMascaraTelefone);
 });
 
+// 📞 Máscara de telefone
 function aplicarMascaraTelefone(event) {
     let valor = event.target.value.replace(/\D/g, '');
-
     if (valor.length > 11) valor = valor.slice(0, 11);
 
     if (valor.length <= 10) {
@@ -38,17 +39,34 @@ function aplicarMascaraTelefone(event) {
     event.target.value = valor;
 }
 
+// 📥 Carregar convênios
 async function carregarConvenios() {
+    const token = localStorage.getItem('token');
+    if (!token) {
+        alert('Você precisa estar logado!');
+        window.location.href = '/login.html';
+        return;
+    }
+
     try {
-        const response = await fetch(API_URL);
+        const response = await fetch(`${API_URL}`, {
+            headers: { 'Authorization': `Bearer ${token}` }
+        });
+
+        if (!response.ok) {
+            throw new Error('Erro ao carregar convênios');
+        }
+
         convenios = await response.json();
         renderizarLista();
-    } catch (error) {
-        console.error(error);
-        document.getElementById('listaConvenios').innerHTML = '<li>Erro ao carregar convênios</li>';
+    } catch (err) {
+        console.error('Erro ao carregar convenios:', err);
+        const lista = document.getElementById('listaConvenios');
+        lista.innerHTML = '<li>Erro ao carregar convênios.</li>';
     }
 }
 
+// 🧾 Renderizar lista paginada
 function renderizarLista() {
     const lista = document.getElementById('listaConvenios');
     lista.innerHTML = '';
@@ -76,6 +94,7 @@ function renderizarLista() {
     atualizarPaginacao();
 }
 
+// 📄 Atualizar paginação
 function atualizarPaginacao() {
     const totalPaginas = Math.ceil(convenios.length / pageSize);
     document.getElementById('pageInfo').textContent = `Página ${currentPage} de ${totalPaginas || 1}`;
@@ -84,11 +103,13 @@ function atualizarPaginacao() {
     document.getElementById('nextPage').disabled = currentPage === totalPaginas || totalPaginas === 0;
 }
 
+// 🔁 Mudar página
 function mudarPagina(delta) {
     currentPage += delta;
     renderizarLista();
 }
 
+// 💾 Criar ou atualizar convênio
 async function salvarConvenio(event) {
     event.preventDefault();
 
@@ -96,6 +117,7 @@ async function salvarConvenio(event) {
     const nome = document.getElementById('nomeConvenio').value.trim();
     const cobertura = document.getElementById('coberturaConvenio').value.trim();
     let telefoneContato = document.getElementById('telefoneConvenio').value.replace(/\D/g, '');
+    const token = localStorage.getItem('token');
 
     if (!nome || !cobertura) {
         alert('Preencha todos os campos obrigatórios!');
@@ -105,19 +127,19 @@ async function salvarConvenio(event) {
     const convenio = { nome, cobertura, telefoneContato };
 
     try {
-        if (id) {
-            await fetch(`${API_URL}/${id}`, {
-                method: 'PUT',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(convenio)
-            });
-        } else {
-            await fetch(API_URL, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(convenio)
-            });
-        }
+        const url = id ? `${API_URL}/${id}` : API_URL;
+        const method = id ? 'PUT' : 'POST';
+
+        const response = await fetch(url, {
+            method,
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${token}`
+            },
+            body: JSON.stringify(convenio)
+        });
+
+        if (!response.ok) throw new Error('Erro ao salvar o convênio');
 
         alert(id ? 'Convênio atualizado com sucesso!' : 'Convênio salvo com sucesso!');
         cancelarEdicaoConvenio();
@@ -126,14 +148,12 @@ async function salvarConvenio(event) {
     } catch (error) {
         console.error(error);
         alert('Erro ao salvar o convênio!');
-        if (convenioEmEdicaoId) {
-            cancelarEdicaoConvenio();
-        } else {
-            resetFormularioConvenio();
-        }
+        if (convenioEmEdicaoId) cancelarEdicaoConvenio();
+        else resetFormularioConvenio();
     }
 }
 
+// ✏️ Editar convênio
 function editar(id, nome, cobertura, telefoneContato) {
     convenioEmEdicaoId = id;
 
@@ -147,11 +167,20 @@ function editar(id, nome, cobertura, telefoneContato) {
     document.getElementById('telefoneConvenio').value = telefoneContato || '';
 }
 
+// 🗑️ Deletar convênio
 async function deletarConvenio(id) {
     if (!confirm('Deseja realmente excluir este convênio?')) return;
 
+    const token = localStorage.getItem('token');
+
     try {
-        await fetch(`${API_URL}/${id}`, { method: 'DELETE' });
+        const response = await fetch(`${API_URL}/${id}`, {
+            method: 'DELETE',
+            headers: { 'Authorization': `Bearer ${token}` }
+        });
+
+        if (!response.ok) throw new Error('Erro ao excluir o convênio');
+
         await carregarConvenios();
         alert('Convênio excluído com sucesso!');
     } catch (error) {
@@ -160,14 +189,14 @@ async function deletarConvenio(id) {
     }
 }
 
+// 🔄 Resetar formulário
 function resetFormularioConvenio() {
     const form = document.getElementById('convenioForm');
-    if (form) {
-        form.reset();
-    }
+    if (form) form.reset();
     document.getElementById('idConvenio').value = '';
 }
 
+// ❌ Cancelar edição
 function cancelarEdicaoConvenio() {
     convenioEmEdicaoId = null;
 

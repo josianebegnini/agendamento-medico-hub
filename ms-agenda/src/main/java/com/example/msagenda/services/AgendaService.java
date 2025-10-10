@@ -170,4 +170,41 @@ public class AgendaService {
                 medico != null ? medico.getNome() : "Médico"
         );
     }
+
+    public Agenda atualizar(Long id, AgendamentoRequestDTO dto) {
+        Agenda agendaExistente = buscarPorId(id);
+
+        if (dto.getMedicoId() == null || dto.getPacienteId() == null)
+            throw new IllegalArgumentException("Médico e paciente são obrigatórios.");
+
+        MedicoResponseDTO medico = medicoWebClient.get()
+                .uri("/api/medicos/{id}", dto.getMedicoId())
+                .retrieve()
+                .bodyToMono(MedicoResponseDTO.class)
+                .block();
+
+        PacienteResponseDTO paciente = pacienteWebClient.get()
+                .uri("/api/pacientes/{id}", dto.getPacienteId())
+                .retrieve()
+                .bodyToMono(PacienteResponseDTO.class)
+                .block();
+
+        if (medico == null)
+            throw new ResourceNotFoundException("Médico não encontrado.");
+        if (paciente == null)
+            throw new ResourceNotFoundException("Paciente não encontrado.");
+
+        // Evita conflito de horário para outro agendamento do mesmo médico
+        boolean ocupado = agendaRepository.existsByMedicoIdAndDataHora(medico.getId(), dto.getDataHora());
+        if (ocupado && !agendaExistente.getDataHora().equals(dto.getDataHora()))
+            throw new IllegalArgumentException("O médico já possui um agendamento neste horário.");
+
+        agendaExistente.setMedicoId(medico.getId());
+        agendaExistente.setPacienteId(paciente.getId());
+        agendaExistente.setDataHora(dto.getDataHora());
+        agendaExistente.setTipoConsulta(dto.getTipoConsulta());
+        agendaExistente.setStatus(StatusAgenda.AGENDADA);
+
+        return agendaRepository.save(agendaExistente);
+    }
 }

@@ -1,9 +1,20 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <project version="4">
-  <component name="Encoding">
+  <component name="Encoding" native2AsciiForPropertiesFiles="true" defaultCharsetForPropertiesFiles="UTF-8">
     <file url="file://$PROJECT_DIR$/agendamento-medico-front/src/main/java" charset="UTF-8" />
     <file url="file://$PROJECT_DIR$/agendamento-medico-front/src/main/resources" charset="UTF-8" />
+    <file url="file://$PROJECT_DIR$/gw-agendamento-medico/src/main/java" charset="UTF-8" />
+    <file url="file://$PROJECT_DIR$/ms-agenda/Dockerfile" charset="UTF-8" />
     <file url="file://$PROJECT_DIR$/ms-agenda/src/main/java" charset="UTF-8" />
+    <file url="file://$PROJECT_DIR$/ms-agenda/src/main/resources" charset="UTF-8" />
+    <file url="file://$PROJECT_DIR$/ms-auth/Dockerfile" charset="UTF-8" />
+    <file url="file://$PROJECT_DIR$/ms-auth/src/main/java" charset="UTF-8" />
+    <file url="file://$PROJECT_DIR$/ms-auth/src/main/resources" charset="UTF-8" />
+    <file url="file://$PROJECT_DIR$/ms-medico/Dockerfile" charset="UTF-8" />
     <file url="file://$PROJECT_DIR$/ms-medico/src/main/java" charset="UTF-8" />
+    <file url="file://$PROJECT_DIR$/ms-medico/src/main/resources" charset="UTF-8" />
+    <file url="file://$PROJECT_DIR$/ms-paciente/Dockerfile" charset="UTF-8" />
+    <file url="file://$PROJECT_DIR$/ms-paciente/src/main/java" charset="UTF-8" />
+    <file url="file://$PROJECT_DIR$/ms-paciente/src/main/resources" charset="UTF-8" />
   </component>
 </project>
