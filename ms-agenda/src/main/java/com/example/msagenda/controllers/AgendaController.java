@@ -20,7 +20,7 @@ import java.time.LocalDateTime;
 import java.util.List;
 
 @RestController
-@RequestMapping("/agendas")
+@RequestMapping("/api/agendas")
 @Tag(name = "Agendas", description = "Gerenciamento de agendamentos de consultas médicas")
 public class AgendaController {
 

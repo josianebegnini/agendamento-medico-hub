@@ -6,12 +6,16 @@ let agendamentos = [];
 let paginaAtual = 1;
 const itensPorPagina = 5;
 
+let pacientesCache = [];
+let medicosCache = [];
+
 document.addEventListener('DOMContentLoaded', () => {
   carregarPacientes();
   carregarMedicos();
   carregarAgendamentos();
 
-  document.getElementById('btnAgendar').addEventListener('click', agendarConsulta);
+  document.getElementById('agendaForm').addEventListener('submit', agendarConsulta);
+  document.getElementById('btnCancelarEdicao').addEventListener('click', cancelarEdicao);
   document.getElementById('prevPage').addEventListener('click', () => mudarPagina(-1));
   document.getElementById('nextPage').addEventListener('click', () => mudarPagina(1));
 });
@@ -24,11 +28,14 @@ function carregarPacientes() {
     .then(res => res.json())
     .then(data => {
       const pacientes = Array.isArray(data) ? data : (data.content || []);
+      pacientesCache = pacientes;
       if (!pacientes.length) {
         select.innerHTML = '<option value="">Nenhum paciente cadastrado</option>';
         select.disabled = true;
         return;
       }
+
+      select.disabled = false;
 
       pacientes.forEach(p => {
         const op = document.createElement('option');
@@ -38,6 +45,7 @@ function carregarPacientes() {
       });
     })
     .catch(() => {
+      pacientesCache = [];
       select.innerHTML = '<option value="">Erro ao carregar pacientes</option>';
       select.disabled = true;
     });
@@ -51,11 +59,14 @@ function carregarMedicos() {
     .then(res => res.json())
     .then(data => {
       const medicos = Array.isArray(data) ? data : (data.content || []);
+      medicosCache = medicos;
       if (!medicos.length) {
         select.innerHTML = '<option value="">Nenhum médico cadastrado</option>';
         select.disabled = true;
         return;
       }
+
+      select.disabled = false;
 
       medicos.forEach(med => {
         const op = document.createElement('option');
@@ -68,6 +79,7 @@ function carregarMedicos() {
       });
     })
     .catch(() => {
+      medicosCache = [];
       select.innerHTML = '<option value="">Erro ao carregar médicos</option>';
       select.disabled = true;
     });
@@ -104,13 +116,44 @@ function exibirAgendamentos() {
 
   pagina.forEach(a => {
     const li = document.createElement('li');
-    li.innerHTML = `
+    const info = document.createElement('div');
+    const status = (a.status || 'AGENDADA').toUpperCase();
+    const statusClasse = obterClasseStatus(status);
+    const statusTexto = traduzirStatus(status);
+
+    info.innerHTML = `
       <div>
         <strong>${a.pacienteNome}</strong> - ${a.medicoNome}<br>
-        <small>${new Date(a.dataHora).toLocaleString('pt-BR')}</small> |
-        <em>${a.tipoConsulta}</em>
+        <small>${formatarDataParaLista(a.dataHora)}</small> |
+        <em>${a.tipoConsulta}</em> | <span class="status ${statusClasse}">${statusTexto}</span>
       </div>
     `;
+
+    const actions = document.createElement('div');
+    actions.className = 'list-actions';
+
+    if (status !== 'CANCELADA') {
+      const editarBtn = document.createElement('button');
+      editarBtn.type = 'button';
+      editarBtn.className = 'btn-action';
+      editarBtn.textContent = 'Editar';
+      editarBtn.addEventListener('click', () => prepararEdicao(a));
+      actions.appendChild(editarBtn);
+    }
+
+    if (status === 'AGENDADA') {
+      const cancelarBtn = document.createElement('button');
+      cancelarBtn.type = 'button';
+      cancelarBtn.className = 'btn-action btn-action-danger';
+      cancelarBtn.textContent = 'Cancelar';
+      cancelarBtn.addEventListener('click', () => cancelarAgendamento(a.id));
+      actions.appendChild(cancelarBtn);
+    }
+
+    li.appendChild(info);
+    if (actions.children.length) {
+      li.appendChild(actions);
+    }
     lista.appendChild(li);
   });
 
@@ -133,19 +176,25 @@ function agendarConsulta(event) {
   const medicoId    = document.getElementById('medico').value;
   const tipoConsulta = document.getElementById('tipoConsulta').value;
   const dataHora     = document.getElementById('dataHora').value;
+  const agendamentoId = document.getElementById('agendamentoId').value;
 
-  if (!pacienteId) {
+  if (!agendamentoId && !pacienteId) {
     alert('Selecione um paciente.');
     return;
   }
 
-  if (!medicoId || isNaN(medicoId)) {
+  if (!agendamentoId && (!medicoId || isNaN(medicoId))) {
     alert('Selecione um médico válido.');
     return;
   }
 
   if (!dataHora) {
     alert('Informe a data e a hora.');
+    return;
+  }
+
+  if (agendamentoId) {
+    remarcarAgendamento(agendamentoId, dataHora, tipoConsulta);
     return;
   }
 
@@ -161,19 +210,183 @@ function agendarConsulta(event) {
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(payload)
   })
-    .then(res => {
-      if (!res.ok) return res.json().then(err => Promise.reject(err));
-      return res.json();
-    })
+    .then(handleApiResponse)
     .then(() => {
       alert('Consulta agendada com sucesso!');
-      document.getElementById('paciente').value = '';
-      document.getElementById('medico').value = '';
-      document.getElementById('tipoConsulta').value = 'PRESENCIAL';
-      document.getElementById('dataHora').value = '';
+      resetFormulario();
       carregarAgendamentos();
     })
     .catch(err => {
-      alert(err.message || 'Erro ao agendar consulta.');
+      exibirErro(err, 'Erro ao agendar consulta.');
     });
+}
+
+function remarcarAgendamento(id, dataHora, tipoConsulta) {
+  const params = new URLSearchParams({
+    novaDataHora: dataHora,
+    tipoConsulta
+  });
+
+  fetch(`${API_AGENDAS}/${id}/remarcar?${params.toString()}`, {
+    method: 'PUT'
+  })
+    .then(handleApiResponse)
+    .then(() => {
+      alert('Agendamento atualizado com sucesso!');
+      resetFormulario();
+      carregarAgendamentos();
+    })
+    .catch(err => {
+      exibirErro(err, 'Erro ao atualizar agendamento.');
+    });
+}
+
+function prepararEdicao(agendamento) {
+  document.getElementById('agendamentoId').value = agendamento.id;
+  document.getElementById('btnAgendar').textContent = 'Salvar alterações';
+  document.getElementById('btnCancelarEdicao').classList.remove('hidden');
+
+  selecionarPaciente(agendamento.pacienteNome);
+  selecionarMedico(agendamento.medicoNome);
+
+  document.getElementById('tipoConsulta').value = agendamento.tipoConsulta || 'PRESENCIAL';
+  document.getElementById('dataHora').value = formatarDataParaInput(agendamento.dataHora);
+
+  document.getElementById('paciente').disabled = true;
+  document.getElementById('medico').disabled = true;
+}
+
+function selecionarPaciente(nome) {
+  const select = document.getElementById('paciente');
+  const paciente = pacientesCache.find(p => (p.nome || '').toLowerCase() === (nome || '').toLowerCase());
+  if (paciente) {
+    select.value = paciente.id;
+  }
+}
+
+function selecionarMedico(nome) {
+  const select = document.getElementById('medico');
+  const medico = medicosCache.find(m => (m.nome || '').toLowerCase() === (nome || '').toLowerCase());
+  if (medico) {
+    select.value = medico.id;
+  }
+}
+
+function cancelarEdicao() {
+  resetFormulario();
+}
+
+function resetFormulario() {
+  document.getElementById('agendaForm').reset();
+  document.getElementById('agendamentoId').value = '';
+  document.getElementById('btnAgendar').textContent = 'Agendar';
+  document.getElementById('btnCancelarEdicao').classList.add('hidden');
+  document.getElementById('paciente').disabled = false;
+  document.getElementById('medico').disabled = false;
+}
+
+function formatarDataParaLista(dataHora) {
+  if (!dataHora) return '';
+  const data = new Date(dataHora);
+  return data.toLocaleString('pt-BR');
+}
+
+function formatarDataParaInput(dataHora) {
+  if (!dataHora) return '';
+  const data = new Date(dataHora);
+  const timezoneOffset = data.getTimezoneOffset() * 60000;
+  const localISOTime = new Date(data.getTime() - timezoneOffset).toISOString();
+  return localISOTime.slice(0, 16);
+}
+
+function cancelarAgendamento(id) {
+  if (!id) return;
+
+  const confirmacao = confirm('Tem certeza de que deseja cancelar este agendamento?');
+  if (!confirmacao) {
+    return;
+  }
+
+  fetch(`${API_AGENDAS}/${id}/cancelar`, {
+    method: 'PATCH'
+  })
+    .then(handleApiResponse)
+    .then(() => {
+      alert('Agendamento cancelado com sucesso!');
+      resetFormulario();
+      carregarAgendamentos();
+    })
+    .catch(err => {
+      exibirErro(err, 'Erro ao cancelar agendamento.');
+    });
+}
+
+function obterClasseStatus(status) {
+  if (!status) return '';
+  return `status-${status.toLowerCase()}`;
+}
+
+function traduzirStatus(status) {
+  const mapa = {
+    AGENDADA: 'Agendada',
+    CANCELADA: 'Cancelada',
+    CONCLUIDA: 'Concluída'
+  };
+
+  return mapa[status] || status || '';
+}
+
+function exibirErro(err, mensagemPadrao) {
+  if (!err) {
+    alert(mensagemPadrao);
+    return;
+  }
+
+  if (typeof err === 'string' && err.trim()) {
+    alert(err);
+    return;
+  }
+
+  const mensagem = err.message || mensagemPadrao;
+  alert(mensagem);
+}
+
+async function handleApiResponse(res) {
+  if (res.ok) {
+    const contentType = res.headers.get('content-type') || '';
+    if (!contentType || res.status === 204) {
+      return null;
+    }
+
+    if (contentType.includes('application/json')) {
+      return res.json();
+    }
+
+    return res.text();
+  }
+
+  const mensagem = await extrairMensagemErro(res);
+  throw new Error(mensagem);
+}
+
+async function extrairMensagemErro(res) {
+  const texto = await res.text();
+
+  if (!texto) {
+    return `Erro ${res.status}: ${res.statusText || 'Solicitação não pôde ser processada.'}`;
+  }
+
+  try {
+    const data = JSON.parse(texto);
+    if (typeof data === 'string') {
+      return data;
+    }
+    if (data && typeof data === 'object') {
+      return data.message || data.error || data.titulo || JSON.stringify(data);
+    }
+  } catch (_) {
+    // Ignora erro de parse e usa o texto bruto
+  }
+
+  return texto;
 }
