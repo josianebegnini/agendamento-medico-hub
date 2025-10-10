@@ -195,10 +195,10 @@ function mudarPagina(direcao) {
   }
 }
 
-// 🧾 Agendar nova consulta
 async function agendarConsulta(event) {
   event.preventDefault();
 
+  const id = document.getElementById('agendamentoId').value;
   const pacienteId = document.getElementById('paciente').value;
   const medicoId = document.getElementById('medico').value;
   const tipoConsulta = document.getElementById('tipoConsulta').value;
@@ -212,8 +212,14 @@ async function agendarConsulta(event) {
   const payload = { pacienteId: Number(pacienteId), medicoId: Number(medicoId), tipoConsulta, dataHora };
 
   try {
-    const res = await fetch(`${API_AGENDAS}/agendar`, {
-      method: 'POST',
+    const url = id
+      ? `${API_AGENDAS}/${id}`  // se tiver ID, faz update
+      : `${API_AGENDAS}/agendar`;
+
+    const method = id ? 'PUT' : 'POST';
+
+    const res = await fetch(url, {
+      method,
       mode: 'cors',
       credentials: 'include',
       headers: getAuthHeaders(),
@@ -221,15 +227,17 @@ async function agendarConsulta(event) {
     });
 
     if (!res.ok) throw new Error(`Erro ${res.status}`);
-    alert('Consulta agendada com sucesso!');
+
+    alert(id ? 'Agendamento atualizado com sucesso!' : 'Consulta agendada com sucesso!');
     resetFormulario();
     carregarAgendamentos();
 
   } catch (err) {
-    console.error('❌ Erro ao agendar consulta:', err);
-    alert('Erro ao agendar consulta.');
+    console.error('❌ Erro ao salvar agendamento:', err);
+    alert('Erro ao salvar agendamento.');
   }
 }
+
 
 // ❌ Cancelar agendamento
 async function cancelarAgendamento(id) {
@@ -273,3 +281,35 @@ function formatarDataParaLista(dataHora) {
 function cancelarEdicao() {
   resetFormulario();
 }
+
+// ✏️ Prepara formulário para edição de um agendamento existente
+// ✏️ Prepara formulário para edição de um agendamento existente
+function prepararEdicao(id) {
+  const agendamento = agendamentos.find(a => a.id === id);
+  if (!agendamento) {
+    alert("Agendamento não encontrado.");
+    return;
+  }
+
+  // Extrai IDs corretamente, independentemente do formato retornado
+  const pacienteId = agendamento.pacienteId || agendamento.paciente?.id || "";
+  const medicoId = agendamento.medicoId || agendamento.medico?.id || "";
+
+  // Preenche os campos do formulário
+  document.getElementById("agendamentoId").value = agendamento.id;
+  document.getElementById("paciente").value = pacienteId;
+  document.getElementById("medico").value = medicoId;
+  document.getElementById("tipoConsulta").value = agendamento.tipoConsulta || "PRESENCIAL";
+
+  // Formata data/hora para campo <input type="datetime-local">
+  if (agendamento.dataHora) {
+    const data = new Date(agendamento.dataHora);
+    const localISO = data.toISOString().slice(0, 16);
+    document.getElementById("dataHora").value = localISO;
+  }
+
+  // Alterna botões
+  document.getElementById("btnAgendar").textContent = "Salvar alterações";
+  document.getElementById("btnCancelarEdicao").classList.remove("hidden");
+}
+
