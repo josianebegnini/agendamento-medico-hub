@@ -1,0 +1,107 @@
+body {
+  margin: 0;
+  height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-family: "Segoe UI", Arial, sans-serif;
+  background: linear-gradient(135deg, #4d9fda, #42c9b7);
+  color: #fff;
+}
+
+.page-container {
+  text-align: center;
+  width: 100%;
+  max-width: 400px;
+  padding: 20px;
+}
+
+h2 {
+  font-size: 24px;
+  font-weight: bold;
+  margin-bottom: 30px;
+  text-shadow: 1px 1px 3px rgba(0, 0, 0, 0.3);
+}
+
+.register-card {
+  background: rgba(255, 255, 255, 0.15);
+  backdrop-filter: blur(12px);
+  border-radius: 15px;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.25);
+  padding: 30px;
+  text-align: left;
+}
+
+label {
+  display: block;
+  font-size: 14px;
+  color: #eaeaea;
+  margin-top: 10px;
+}
+
+input {
+  width: 100%;
+  padding: 10px;
+  margin-top: 5px;
+  border: none;
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.2);
+  color: #fff;
+  font-size: 14px;
+  outline: none;
+}
+
+input::placeholder {
+  color: #d9f1ff;
+}
+
+button {
+  width: 100%;
+  padding: 10px;
+  margin-top: 20px;
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+  font-weight: bold;
+  background: linear-gradient(to right, #00aaff, #00d4ff);
+  color: #fff;
+  transition: 0.3s;
+}
+
+button:hover {
+  opacity: 0.9;
+}
+
+.success {
+  color: #7fffd4;
+  text-align: center;
+  margin-top: 10px;
+}
+
+.error {
+  color: #ff8b8b;
+  text-align: center;
+  margin-top: 10px;
+}
+
+.link-voltar {
+  text-align: center;
+  margin-top: 15px;
+  font-size: 14px;
+}
+
+.link-voltar a {
+  color: #fff;
+  font-weight: bold;
+  text-decoration: none;
+}
+
+.link-voltar a:hover {
+  text-decoration: underline;
+}
+
+footer {
+  margin-top: 30px;
+  font-size: 13px;
+  opacity: 0.8;
+}
