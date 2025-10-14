@@ -7,12 +7,57 @@
 
 body {
     width: 100vw;
-    height: 100vh;
+    min-height: 100vh;
     background: linear-gradient(135deg, rgba(58,123,213,0.9), rgba(58,213,176,0.9)),
                 url('https://images.unsplash.com/photo-1588776814546-c3aa9e8230d4?fit=crop&w=1350&q=80') no-repeat center center/cover;
     display: flex;
+    flex-direction: column;
     justify-content: center;
     align-items: center;
+    gap: 1.5rem;
+    padding: 2rem 0;
+}
+
+.header {
+    width: 90%;
+    max-width: 1200px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1rem;
+    color: #fff;
+}
+
+.header h1 {
+    flex: 1;
+    text-align: center;
+    font-size: 2.3rem;
+    margin: 0;
+    text-shadow: 0 2px 4px rgba(0,0,0,0.4);
+}
+
+.home-button {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.55rem 1.1rem;
+    border-radius: 999px;
+    border: 1px solid rgba(255,255,255,0.5);
+    background: rgba(255,255,255,0.18);
+    color: #fff;
+    text-decoration: none;
+    font-weight: 600;
+    transition: background 0.3s ease, transform 0.2s ease;
+}
+
+.home-button:hover,
+.home-button:focus {
+    background: rgba(255,255,255,0.28);
+    transform: translateY(-1px);
+}
+
+.home-button span[aria-hidden="true"] {
+    font-size: 1.1rem;
 }
 
 .container {

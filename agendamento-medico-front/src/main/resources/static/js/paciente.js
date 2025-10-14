@@ -43,8 +43,6 @@ function getAuthHeaders() {
         window.location.href = '/login.html';
         throw new Error('Token ausente');
     }
-
-    console.log('🔐 Token carregado do localStorage:', token);
     return {
         'Authorization': `Bearer ${token}`,
         'Content-Type': 'application/json'

@@ -209,7 +209,20 @@ async function agendarConsulta(event) {
     return;
   }
 
-  const payload = { pacienteId: Number(pacienteId), medicoId: Number(medicoId), tipoConsulta, dataHora };
+    const dataSelecionada = new Date(dataHora);
+    const agora = new Date();
+
+    if (dataSelecionada < agora) {
+      alert('❌ Não pode agendar com uma data anterior à data de hoje.');
+      return;
+    }
+
+  const payload = {
+    pacienteId: Number(pacienteId),
+    medicoId: Number(medicoId),
+    tipoConsulta,
+    dataHora
+  };
 
   try {
     const url = id
@@ -237,7 +250,6 @@ async function agendarConsulta(event) {
     alert('Erro ao salvar agendamento.');
   }
 }
-
 
 // ❌ Cancelar agendamento
 async function cancelarAgendamento(id) {
