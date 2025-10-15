@@ -1,10 +1,12 @@
 package com.example.mspaciente.services;
 
 import com.example.mspaciente.dtos.ConvenioDTO;
+import com.example.mspaciente.exceptions.BusinessException;
 import com.example.mspaciente.mappers.ConvenioMapper;
 import com.example.mspaciente.models.Convenio;
 import com.example.mspaciente.repositories.ConvenioRepository;
 import lombok.RequiredArgsConstructor;
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
@@ -50,8 +52,13 @@ public class ConvenioService {
 
     public void deletar(Long id) {
         if (!repository.existsById(id)) {
-            throw new RuntimeException("Convênio não encontrado com id " + id);
+            throw new BusinessException("Convênio não encontrado com id " + id);
         }
-        repository.deleteById(id);
+
+        try {
+            repository.deleteById(id);
+        } catch (DataIntegrityViolationException e) {
+            throw new BusinessException("Não é possível excluir o convênio, pois há pacientes vinculados a ele.");
+        }
     }
 }

@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="pt-BR">
+<html lang="pt-BR" xmlns:th="http://www.thymeleaf.org">
 <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
@@ -7,6 +7,14 @@
     <link rel="stylesheet" href="/css/medico.css"/>
 </head>
 <body>
+
+<header class="header">
+    <a href="/index.html" class="home-button" aria-label="Voltar para a página inicial">
+        <span aria-hidden="true">🏠</span>
+        <span>Voltar para a Home</span>
+    </a>
+    <h1>Gerenciamento de Médicos</h1>
+</header>
 
 <div class="container">
     <section class="glass-card">
@@ -30,7 +38,16 @@
     </section>
 
     <section class="glass-card">
-        <h2 id="formTitle">Novo Médico</h2>
+        <div class="card-title">
+            <h2 id="formTitle">Novo Médico</h2>
+            <button type="button" class="endpoint-tooltip" aria-label="Informações sobre o endpoint utilizado neste formulário">
+                ?
+                <span class="tooltip-text" role="tooltip">
+                    <strong>Endpoint:</strong> POST /api/medicos<br>
+                    Envia os dados preenchidos para cadastrar ou atualizar um médico na plataforma.
+                </span>
+            </button>
+        </div>
         <form id="medicoForm">
             <div class="form-group">
                 <label for="nome">Nome do Médico</label>
@@ -60,7 +77,9 @@
         </form>
     </section>
 </div>
-
+<script th:inline="javascript">
+    const API_GATEWAY_BASE = /*[[${@environment.getProperty('app.gateway.base-url')}]]*/ 'http://localhost:8085';
+</script>
 <script src="/js/medico.js"></script>
 </body>
 </html>

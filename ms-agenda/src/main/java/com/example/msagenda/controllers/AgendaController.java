@@ -17,7 +17,7 @@ import java.time.LocalDateTime;
 import java.util.List;
 
 @RestController
-@RequestMapping("/agendas")
+@RequestMapping("/api/agendas")
 @Tag(name = "Agendas", description = "Gerenciamento de agendamentos de consultas médicas")
 public class AgendaController {
 
@@ -56,8 +56,6 @@ public class AgendaController {
             description = "Cria um novo agendamento vinculando paciente, médico e data da consulta.")
     @ApiResponse(responseCode = "201", description = "Consulta agendada com sucesso")
     @ApiResponse(responseCode = "400", description = "Erro de validação nos parâmetros")
-    // Reaproveitamos o serviço para orquestrar a criação do agendamento porque ele valida a
-    // disponibilidade de recursos e garante integridade, convertendo o resultado para DTO no retorno.
     public ResponseEntity<AgendamentoResponseDTO> agendar(@Valid @RequestBody AgendamentoRequestDTO dto) {
         AgendamentoResponseDTO response = service.agendarComNomes(dto);
         return ResponseEntity.ok(response);
@@ -100,5 +98,20 @@ public class AgendaController {
     public ResponseEntity<Void> deletar(@PathVariable Long id) {
         service.deletar(id);
         return ResponseEntity.noContent().build();
+    }
+
+    @PutMapping("/{id}")
+    @Operation(summary = "Atualiza um agendamento existente",
+            description = "Permite atualizar paciente, médico, data e tipo de consulta de um agendamento.")
+    @ApiResponse(responseCode = "200", description = "Agendamento atualizado com sucesso")
+    @ApiResponse(responseCode = "400", description = "Erro de validação")
+    @ApiResponse(responseCode = "404", description = "Agendamento não encontrado")
+    public ResponseEntity<AgendamentoResponseDTO> atualizar(
+            @PathVariable Long id,
+            @Valid @RequestBody AgendamentoRequestDTO dto) {
+
+        Agenda atualizado = service.atualizar(id, dto);
+        AgendamentoResponseDTO response = service.buscarPorIdComNomes(atualizado.getId());
+        return ResponseEntity.ok(response);
     }
 }

@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="pt-BR">
+<html lang="pt-BR" xmlns:th="http://www.thymeleaf.org">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -10,6 +10,10 @@
 <div class="app-container">
 
     <header class="header">
+        <a href="/index.html" class="home-button" aria-label="Voltar para a página inicial">
+            <span aria-hidden="true">🏠</span>
+            <span>Voltar para a Home</span>
+        </a>
         <h1>Gerenciamento de Agendamentos</h1>
     </header>
 
@@ -26,36 +30,52 @@
         </div>
 
         <div class="glass-card form-card">
-            <h2>Agendar Consulta</h2>
-
-            <div class="form-group">
-                <label for="paciente">Paciente</label>
-                <select id="paciente" required>
-                    <option value="">Selecione um paciente</option>
-                </select>
+            <div class="card-title">
+                <h2>Agendar Consulta</h2>
+                <button type="button" class="endpoint-tooltip" aria-label="Informações sobre o endpoint utilizado neste formulário">
+                    ?
+                    <span class="tooltip-text" role="tooltip">
+                        <strong>Endpoint:</strong> POST /agendas/agendar<br>
+                        Envia os dados do formulário para criar um novo agendamento de consulta.
+                    </span>
+                </button>
             </div>
 
-            <div class="form-group">
-                <label for="medico">Médico</label>
-                <select id="medico" required>
-                    <option value="">Selecione um médico</option>
-                </select>
-            </div>
+            <form id="agendaForm">
+                <input type="hidden" id="agendamentoId">
 
-            <div class="form-group">
-                <label for="tipoConsulta">Tipo de Consulta</label>
-                <select id="tipoConsulta" required>
-                    <option value="PRESENCIAL">Presencial</option>
-                    <option value="REMOTO">Remoto</option>
-                </select>
-            </div>
+                <div class="form-group">
+                    <label for="paciente">Paciente</label>
+                    <select id="paciente" required>
+                        <option value="">Selecione um paciente</option>
+                    </select>
+                </div>
 
-            <div class="form-group">
-                <label for="dataHora">Data e Hora</label>
-                <input type="datetime-local" id="dataHora" required>
-            </div>
+                <div class="form-group">
+                    <label for="medico">Médico</label>
+                    <select id="medico" required>
+                        <option value="">Selecione um médico</option>
+                    </select>
+                </div>
 
-            <button id="btnAgendar" class="btn-primary">Agendar</button>
+                <div class="form-group">
+                    <label for="tipoConsulta">Tipo de Consulta</label>
+                    <select id="tipoConsulta" required>
+                        <option value="PRESENCIAL">Presencial</option>
+                        <option value="REMOTO">Remoto</option>
+                    </select>
+                </div>
+
+                <div class="form-group">
+                    <label for="dataHora">Data e Hora</label>
+                    <input type="datetime-local" id="dataHora" required>
+                </div>
+
+                <div class="form-actions">
+                    <button type="submit" id="btnAgendar" class="btn-primary">Agendar</button>
+                    <button type="button" id="btnCancelarEdicao" class="btn-secondary hidden">Cancelar edição</button>
+                </div>
+            </form>
         </div>
     </main>
 
@@ -64,7 +84,9 @@
     </footer>
 
 </div>
-
+<script th:inline="javascript">
+    const API_GATEWAY_BASE = /*[[${@environment.getProperty('app.gateway.base-url')}]]*/ 'http://localhost:8085';
+</script>
 <script src="/js/agenda.js"></script>
 </body>
 </html>

@@ -1,0 +1,40 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <title>Cadastrar Usuário - Agendamento Médico</title>
+    <link rel="stylesheet" href="/css/register.css">
+</head>
+<body>
+<div class="page-container">
+    <h2>Cadastro de Usuário</h2>
+
+    <div class="register-card">
+        <form id="registerForm">
+            <label for="username">Usuário</label>
+            <input type="text" id="username" placeholder="Digite seu nome de usuário" required>
+
+            <label for="email">E-mail</label>
+            <input type="email" id="email" placeholder="Digite seu e-mail" required>
+
+            <label for="password">Senha</label>
+            <input type="password" id="password" placeholder="Digite sua senha" required>
+
+            <button type="submit">Cadastrar</button>
+        </form>
+
+        <p id="successMessage" class="success"></p>
+        <p id="errorMessage" class="error"></p>
+
+        <p class="link-voltar">
+            Já tem uma conta?
+            <a href="login.html">Entrar</a>
+        </p>
+    </div>
+
+    <footer>© 2025 Agendamento Médico</footer>
+</div>
+
+<script src="/js/register.js"></script>
+</body>
+</html>

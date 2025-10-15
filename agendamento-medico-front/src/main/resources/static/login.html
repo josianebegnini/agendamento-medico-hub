@@ -1,0 +1,33 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <title>Login - Agendamento Médico</title>
+    <link rel="stylesheet" href="/css/login.css">
+</head>
+<body>
+<div class="page-container">
+    <h2>Bem-vindo ao Agendamento Médico</h2>
+
+    <div class="login-card">
+        <h3>Login</h3>
+        <form id="loginForm">
+            <label for="username">Usuário</label>
+            <input type="text" id="username" placeholder="Digite seu usuário" required>
+
+            <label for="password">Senha</label>
+            <input type="password" id="password" placeholder="Digite sua senha" required>
+
+            <button type="submit">Entrar</button>
+
+            <button type="button" id="btnCadastrar" class="btn-cadastrar">Cadastrar-se</button>
+        </form>
+        <p id="errorMessage" class="error"></p>
+    </div>
+
+    <footer>© 2025 Agendamento Médico</footer>
+</div>
+
+<script src="/js/login.js"></script>
+</body>
+</html>

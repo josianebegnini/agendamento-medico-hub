@@ -5,6 +5,11 @@
     <option name="originalFiles">
       <list>
         <option value="$PROJECT_DIR$/agendamento-medico-front/pom.xml" />
+        <option value="$PROJECT_DIR$/ms-agenda/pom.xml" />
+        <option value="$PROJECT_DIR$/ms-medico/pom.xml" />
+        <option value="$PROJECT_DIR$/gw-agendamento-medico/pom.xml" />
+        <option value="$PROJECT_DIR$/ms-auth/pom.xml" />
+        <option value="$PROJECT_DIR$/ms-paciente/pom.xml" />
       </list>
     </option>
   </component>

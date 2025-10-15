@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="pt-BR">
+<html lang="pt-BR" xmlns:th="http://www.thymeleaf.org">
 <head>
     <meta charset="UTF-8">
     <title>Gerenciar Especialidades</title>
@@ -9,6 +9,10 @@
 
 <div class="app-container">
     <header class="header">
+        <a href="/index.html" class="home-button" aria-label="Voltar para a página inicial">
+            <span aria-hidden="true">🏠</span>
+            <span>Voltar para a Home</span>
+        </a>
         <h1>Gerenciamento de Especialidades</h1>
     </header>
 
@@ -25,19 +29,33 @@
         </div>
 
         <div class="glass-card form-card">
-            <h2>Cadastrar / Editar</h2>
-
-            <div class="form-group">
-                <label for="idEspecialidade">ID (somente para editar)</label>
-                <input type="number" id="idEspecialidade" placeholder="Deixe vazio para novo">
+            <div class="card-title">
+                <h2 id="formTitle">Nova Especialidade</h2>
+                <button type="button" class="endpoint-tooltip" aria-label="Informações sobre o endpoint utilizado neste formulário">
+                    ?
+                    <span class="tooltip-text" role="tooltip">
+                        <strong>Endpoint:</strong> POST /api/especialidades<br>
+                        Cria uma especialidade médica ou atualiza informações existentes.
+                    </span>
+                </button>
             </div>
 
-            <div class="form-group">
-                <label for="nomeEspecialidade">Nome da Especialidade</label>
-                <input type="text" id="nomeEspecialidade" placeholder="Ex.: Cardiologia">
-            </div>
+            <form id="especialidadeForm">
+                <div class="form-group">
+                    <label for="idEspecialidade">ID (somente para editar)</label>
+                    <input type="text" id="idEspecialidade" placeholder="Gerado automaticamente" readonly>
+                </div>
 
-            <button class="btn-primary" id="btnSalvar">Salvar</button>
+                <div class="form-group">
+                    <label for="nomeEspecialidade">Nome da Especialidade</label>
+                    <input type="text" id="nomeEspecialidade" placeholder="Ex.: Cardiologia" required>
+                </div>
+
+                <div class="form-actions">
+                    <button type="submit" class="btn-primary" id="btnSalvar">Salvar Especialidade</button>
+                    <button type="button" class="btn-secondary hidden" id="btnCancelar">Cancelar</button>
+                </div>
+            </form>
         </div>
     </div>
 
@@ -45,7 +63,9 @@
         <p>© 2025 Agendamento Médico</p>
     </footer>
 </div>
-
+<script th:inline="javascript">
+    const API_GATEWAY_BASE = /*[[${@environment.getProperty('app.gateway.base-url')}]]*/ 'http://localhost:8085';
+</script>
 <script src="/js/especialidade.js"></script>
 </body>
 </html>

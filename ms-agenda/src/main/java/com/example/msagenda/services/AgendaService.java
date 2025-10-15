@@ -1,18 +1,15 @@
 package com.example.msagenda.services;
 
-import com.example.msagenda.client.MedicoClient;
-import com.example.msagenda.client.PacienteClient;
-import com.example.msagenda.dtos.AgendamentoRequestDTO;
-import com.example.msagenda.dtos.AgendamentoResponseDTO;
-import com.example.msagenda.dtos.MedicoResponseDTO;
-import com.example.msagenda.dtos.PacienteResponseDTO;
+import com.example.msagenda.dtos.*;
 import com.example.msagenda.enums.StatusAgenda;
 import com.example.msagenda.enums.TipoConsulta;
 import com.example.msagenda.exceptions.ResourceNotFoundException;
 import com.example.msagenda.mappers.AgendamentoMapper;
 import com.example.msagenda.models.Agenda;
+import com.example.msagenda.producers.AgendaProducer;
 import com.example.msagenda.repositories.AgendaRepository;
 import org.springframework.stereotype.Service;
+import org.springframework.web.reactive.function.client.WebClient;
 
 import java.time.LocalDateTime;
 import java.util.List;
@@ -20,18 +17,22 @@ import java.util.List;
 public class AgendaService {
 
     private final AgendaRepository agendaRepository;
-    private final MedicoClient medicoClient;
-    private final PacienteClient pacienteClient;
     private final AgendamentoMapper agendamentoMapper;
+    private final WebClient pacienteWebClient;
+    private final WebClient medicoWebClient;
+    private final AgendaProducer agendaProducer;
 
     public AgendaService(AgendaRepository agendaRepository,
-                         MedicoClient medicoClient,
-                         PacienteClient pacienteClient,
-                         AgendamentoMapper agendamentoMapper) {
+                         AgendamentoMapper agendamentoMapper,
+                         WebClient pacienteWebClient,
+                         WebClient medicoWebClient,
+                         AgendaProducer agendaProducer) {
+
         this.agendaRepository = agendaRepository;
-        this.medicoClient = medicoClient;
-        this.pacienteClient = pacienteClient;
         this.agendamentoMapper = agendamentoMapper;
+        this.pacienteWebClient = pacienteWebClient;
+        this.medicoWebClient = medicoWebClient;
+        this.agendaProducer = agendaProducer;
     }
 
     public List<AgendamentoResponseDTO> listarComNomes() {
@@ -72,8 +73,22 @@ public class AgendaService {
     }
 
     public Agenda agendar(AgendamentoRequestDTO dto) {
-        MedicoResponseDTO medico = medicoClient.buscarPorId(dto.getMedicoId());
-        PacienteResponseDTO paciente = pacienteClient.getPacienteById(dto.getPacienteId());
+
+        if (dto.getMedicoId() == null) {
+            throw new ResourceNotFoundException("Médico inválido.");
+        }
+        if (dto.getPacienteId() == null) {
+            throw new ResourceNotFoundException("Paciente inválido.");
+        }
+        MedicoResponseDTO medico = medicoWebClient.get()
+                .uri("/api/medicos/{id}", dto.getMedicoId())
+                .retrieve()
+                .bodyToMono(MedicoResponseDTO.class).block();
+
+        PacienteResponseDTO paciente = pacienteWebClient.get()
+                .uri("/api/pacientes/{id}", dto.getPacienteId())
+                .retrieve()
+                .bodyToMono(PacienteResponseDTO.class).block();
 
         if (medico == null) throw new ResourceNotFoundException("Médico não encontrado.");
         if (paciente == null) throw new ResourceNotFoundException("Paciente não encontrado.");
@@ -89,7 +104,27 @@ public class AgendaService {
                 .status(StatusAgenda.AGENDADA)
                 .build();
 
-        return agendaRepository.save(novaAgenda);
+        Agenda retorno = agendaRepository.save(novaAgenda);
+
+        if (paciente.getEmail() != null && !paciente.getEmail().isBlank()) {
+
+            EmailPacienteDTO emailDto = new EmailPacienteDTO();
+            emailDto.setMedicoNome(medico.getNome());
+            emailDto.setPacienteNome(paciente.getNome());
+            emailDto.setPacienteEmail(paciente.getEmail());
+            emailDto.setDataHora(dto.getDataHora());
+            emailDto.setTipoConsulta(dto.getTipoConsulta());
+            emailDto.setStatus(StatusAgenda.AGENDADA);
+            emailDto.setAssunto("Consulta Agendada com Sucesso");
+            emailDto.setMensagem("Sua consulta foi marcada para " + dto.getDataHora());
+
+            // 3️⃣ Enviar mensagem via RabbitMQ
+            agendaProducer.enviarEmailPaciente(emailDto);
+        }
+
+        return retorno;
+
+
     }
 
     public Agenda remarcar(Long idAgenda, LocalDateTime novaDataHora, TipoConsulta tipoConsulta) {
@@ -118,13 +153,58 @@ public class AgendaService {
        Métodos auxiliares internos
        ============================= */
     private AgendamentoResponseDTO toResponseComNomes(Agenda agenda) {
-        MedicoResponseDTO medico = medicoClient.buscarPorId(agenda.getMedicoId());
-        PacienteResponseDTO paciente = pacienteClient.getPacienteById(agenda.getPacienteId());
+
+        MedicoResponseDTO medico = medicoWebClient.get()
+                .uri("/api/medicos/{id}", agenda.getMedicoId())
+                .retrieve()
+                .bodyToMono(MedicoResponseDTO.class).block();
+
+        PacienteResponseDTO paciente = pacienteWebClient.get()
+                .uri("/api/pacientes/{id}", agenda.getPacienteId())
+                .retrieve()
+                .bodyToMono(PacienteResponseDTO.class).block();
 
         return agendamentoMapper.toResponse(
                 agenda,
                 paciente != null ? paciente.getNome() : "Paciente",
                 medico != null ? medico.getNome() : "Médico"
         );
+    }
+
+    public Agenda atualizar(Long id, AgendamentoRequestDTO dto) {
+        Agenda agendaExistente = buscarPorId(id);
+
+        if (dto.getMedicoId() == null || dto.getPacienteId() == null)
+            throw new IllegalArgumentException("Médico e paciente são obrigatórios.");
+
+        MedicoResponseDTO medico = medicoWebClient.get()
+                .uri("/api/medicos/{id}", dto.getMedicoId())
+                .retrieve()
+                .bodyToMono(MedicoResponseDTO.class)
+                .block();
+
+        PacienteResponseDTO paciente = pacienteWebClient.get()
+                .uri("/api/pacientes/{id}", dto.getPacienteId())
+                .retrieve()
+                .bodyToMono(PacienteResponseDTO.class)
+                .block();
+
+        if (medico == null)
+            throw new ResourceNotFoundException("Médico não encontrado.");
+        if (paciente == null)
+            throw new ResourceNotFoundException("Paciente não encontrado.");
+
+        // Evita conflito de horário para outro agendamento do mesmo médico
+        boolean ocupado = agendaRepository.existsByMedicoIdAndDataHora(medico.getId(), dto.getDataHora());
+        if (ocupado && !agendaExistente.getDataHora().equals(dto.getDataHora()))
+            throw new IllegalArgumentException("O médico já possui um agendamento neste horário.");
+
+        agendaExistente.setMedicoId(medico.getId());
+        agendaExistente.setPacienteId(paciente.getId());
+        agendaExistente.setDataHora(dto.getDataHora());
+        agendaExistente.setTipoConsulta(dto.getTipoConsulta());
+        agendaExistente.setStatus(StatusAgenda.AGENDADA);
+
+        return agendaRepository.save(agendaExistente);
     }
 }
