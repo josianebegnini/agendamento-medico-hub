@@ -73,8 +73,10 @@ services:
       SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/agendamento
       SPRING_DATASOURCE_USERNAME: user
       SPRING_DATASOURCE_PASSWORD: pass
-      SPRING_RABBITMQ_ADDRESSES: ${CLOUDAMQP_URL}
-      SPRING_RABBITMQ_SSL_ENABLED: "true"
+      SPRING_RABBITMQ_HOST: rabbitmq
+      SPRING_RABBITMQ_PORT: 5672
+      SPRING_RABBITMQ_USERNAME: guest
+      SPRING_RABBITMQ_PASSWORD: guest
     depends_on:
       postgres:
         condition: service_healthy
