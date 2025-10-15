@@ -2,7 +2,7 @@
 
 Este projeto é uma aplicação **Full Stack** para gerenciamento de um sistema de **Agendamento de Consultas Médicas**.  
 Separado em microsserviços, inclui **API RESTful (Spring Boot)** no backend e uma **interface web** moderna no frontend (HTML, CSS e JS).
-Possui serviço gateway e de autenticação e autorização com Spring Security e JWT.
+Possui serviços gateway e auth-service (autenticação e autorização com Spring Security e JWT).
 
 ![img.png](img.png)
 
