@@ -49,6 +49,7 @@ input {
   color: #fff;
   font-size: 14px;
   outline: none;
+  box-sizing: border-box
 }
 
 input::placeholder {
